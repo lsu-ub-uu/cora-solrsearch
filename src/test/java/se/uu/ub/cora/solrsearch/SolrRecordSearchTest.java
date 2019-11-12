@@ -336,6 +336,22 @@ public class SolrRecordSearchTest {
 	}
 
 	@Test
+	public void testSearchOneParameterWithColonCharacterOneRecordType() {
+		DataGroup searchData = createSearchIncludeDataWithSearchTermIdAndValue("titleSearchTerm",
+				"A title: with a colon character");
+
+		List<String> recordTypeList = new ArrayList<>();
+		recordTypeList.add("someRecordType");
+		solrSearch.searchUsingListOfRecordTypesToSearchInAndSearchData(recordTypeList, searchData);
+
+		SolrQuery solrQueryCreated = (SolrQuery) solrClientSpy.params;
+		assertEquals(solrQueryCreated.getQuery(), "title_s:(A title\\: with a colon character)");
+
+		String[] createdFilterQueries = solrQueryCreated.getFilterQueries();
+		assertEquals(createdFilterQueries[0], "type:someRecordType");
+	}
+
+	@Test
 	public void testSearchLInkedDataOneParameterOneRecordType() {
 		DataGroup searchData = createSearchIncludeDataWithSearchTermIdAndValue(
 				"linkedTextSearchTerm", "textToSearchFor");

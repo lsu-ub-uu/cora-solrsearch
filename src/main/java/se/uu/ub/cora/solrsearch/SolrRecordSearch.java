@@ -178,15 +178,21 @@ public final class SolrRecordSearch implements RecordSearch {
 
 	private void createQueryForFinal(SolrQuery solrQuery, DataAtomic childElementFromSearchAsAtomic,
 			String indexFieldName) {
-		String searchStringWithParenthesis = getSearchStringFromChildAndSurroundWithParenthesis(
+		String searchStringWithParenthesis = getEscapedSearchStringFromChildSurroundedWithParenthesis(
 				childElementFromSearchAsAtomic);
 		String queryString = indexFieldName + ":" + searchStringWithParenthesis;
 		solrQuery.set("q", queryString);
 	}
 
-	private String getSearchStringFromChildAndSurroundWithParenthesis(
+	private String getEscapedSearchStringFromChildSurroundedWithParenthesis(
 			DataAtomic childElementFromSearchAsAtomic) {
-		return "(" + childElementFromSearchAsAtomic.getValue() + ")";
+		String value = childElementFromSearchAsAtomic.getValue();
+		String escapedValue = getEscapedValue(value);
+		return "(" + escapedValue + ")";
+	}
+
+	private String getEscapedValue(String value) {
+		return value.replace(":", "\\:");
 	}
 
 	private String getLinkedOnIndexFieldNameFromStorageUsingSearchTerm(DataGroup searchTerm) {
