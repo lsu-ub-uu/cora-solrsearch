@@ -28,8 +28,8 @@ import org.apache.solr.client.solrj.SolrServerException;
 import org.apache.solr.common.SolrInputDocument;
 
 import se.uu.ub.cora.data.DataGroup;
-import se.uu.ub.cora.data.converter.DataGroupToJsonConverter;
-import se.uu.ub.cora.json.builder.org.OrgJsonBuilderFactoryAdapter;
+import se.uu.ub.cora.data.converter.DataToJsonConverter;
+import se.uu.ub.cora.data.converter.DataToJsonConverterProvider;
 import se.uu.ub.cora.search.RecordIndexer;
 import se.uu.ub.cora.solr.SolrClientProvider;
 
@@ -144,13 +144,9 @@ public final class SolrRecordIndexer implements RecordIndexer {
 	}
 
 	private String convertDataGroupToJsonString(DataGroup dataGroup) {
-		DataGroupToJsonConverter dataToJsonConverter = createDataGroupToJsonConvert(dataGroup);
+		DataToJsonConverter dataToJsonConverter = DataToJsonConverterProvider
+				.getConverterUsingDataPart(dataGroup);
 		return dataToJsonConverter.toJson();
-	}
-
-	private DataGroupToJsonConverter createDataGroupToJsonConvert(DataGroup dataGroup) {
-		se.uu.ub.cora.json.builder.JsonBuilderFactory jsonBuilderFactory = new OrgJsonBuilderFactoryAdapter();
-		return DataGroupToJsonConverter.usingJsonFactoryForDataGroup(jsonBuilderFactory, dataGroup);
 	}
 
 	@Override

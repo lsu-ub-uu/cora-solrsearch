@@ -39,38 +39,34 @@ public class SearchStorageSpy implements SearchStorage {
 	}
 
 	private DataElement createLinkedOnWithIndexTermId(String indexTermId) {
-		DataGroup indexTerm = DataGroup.withNameInData("linkedOn");
-		indexTerm.addChild(
-				DataAtomic.withNameInDataAndValue("linkedRecordType", "collectIndexTerm"));
-		indexTerm.addChild(DataAtomic.withNameInDataAndValue("linkedRecordId", indexTermId));
+		DataGroup indexTerm = new DataGroupSpy("linkedOn");
+		indexTerm.addChild(new DataAtomicSpy("linkedRecordType", "collectIndexTerm"));
+		indexTerm.addChild(new DataAtomicSpy("linkedRecordId", indexTermId));
 		return indexTerm;
 	}
 
 	private DataElement createSearchInRecordTypeWithRecordTypeId(String recordTypeId) {
-		DataGroup searchInRecordType = DataGroup.withNameInData("searchInRecordType");
-		searchInRecordType
-				.addChild(DataAtomic.withNameInDataAndValue("linkedRecordType", "recordType"));
-		searchInRecordType
-				.addChild(DataAtomic.withNameInDataAndValue("linkedRecordId", recordTypeId));
+		DataGroup searchInRecordType = new DataGroupSpy("searchInRecordType");
+		searchInRecordType.addChild(new DataAtomicSpy("linkedRecordType", "recordType"));
+		searchInRecordType.addChild(new DataAtomicSpy("linkedRecordId", recordTypeId));
 		return searchInRecordType;
 	}
 
 	private DataAtomic createSearchTermType(String searchTermType) {
-		return DataAtomic.withNameInDataAndValue("searchTermType", searchTermType);
+		return new DataAtomicSpy("searchTermType", searchTermType);
 	}
 
 	private DataGroup createIndexTermWithIndexTermId(String indexTermId) {
-		DataGroup indexTerm = DataGroup.withNameInData("indexTerm");
-		indexTerm.addChild(
-				DataAtomic.withNameInDataAndValue("linkedRecordType", "collectIndexTerm"));
-		indexTerm.addChild(DataAtomic.withNameInDataAndValue("linkedRecordId", indexTermId));
+		DataGroup indexTerm = new DataGroupSpy("indexTerm");
+		indexTerm.addChild(new DataAtomicSpy("linkedRecordType", "collectIndexTerm"));
+		indexTerm.addChild(new DataAtomicSpy("linkedRecordId", indexTermId));
 		return indexTerm;
 	}
 
 	private DataGroup createSearchTermWithId(String searchTermId) {
-		DataGroup searchTerm = DataGroup.withNameInData("searchTerm");
-		DataGroup recordInfo = DataGroup.withNameInData("recordInfo");
-		recordInfo.addChild(DataAtomic.withNameInDataAndValue("id", searchTermId));
+		DataGroup searchTerm = new DataGroupSpy("searchTerm");
+		DataGroup recordInfo = new DataGroupSpy("recordInfo");
+		recordInfo.addChild(new DataAtomicSpy("id", searchTermId));
 		searchTerm.addChild(recordInfo);
 		return searchTerm;
 	}
@@ -79,20 +75,20 @@ public class SearchStorageSpy implements SearchStorage {
 	public DataGroup getCollectIndexTerm(String collectIndexTermId) {
 		collectIndexTermIds.add(collectIndexTermId);
 
-		DataGroup titleIndexTerm = DataGroup.withNameInData("collectTerm");
-		DataGroup extraData = DataGroup.withNameInData("extraData");
+		DataGroup titleIndexTerm = new DataGroupSpy("collectTerm");
+		DataGroup extraData = new DataGroupSpy("extraData");
 		titleIndexTerm.addChild(extraData);
 		if ("titleIndexTerm".equals(collectIndexTermId)) {
-			extraData.addChild(DataAtomic.withNameInDataAndValue("indexFieldName", "title"));
-			extraData.addChild(DataAtomic.withNameInDataAndValue("indexType", indexTypeToReturn));
+			extraData.addChild(new DataAtomicSpy("indexFieldName", "title"));
+			extraData.addChild(new DataAtomicSpy("indexType", indexTypeToReturn));
 		}
 		if ("linkedTextIndexTerm".equals(collectIndexTermId)) {
-			extraData.addChild(DataAtomic.withNameInDataAndValue("indexFieldName", "textId"));
-			extraData.addChild(DataAtomic.withNameInDataAndValue("indexType", "indexTypeString"));
+			extraData.addChild(new DataAtomicSpy("indexFieldName", "textId"));
+			extraData.addChild(new DataAtomicSpy("indexType", "indexTypeString"));
 		}
 		if ("swedishIndexTerm".equals(collectIndexTermId)) {
-			extraData.addChild(DataAtomic.withNameInDataAndValue("indexFieldName", "swedish"));
-			extraData.addChild(DataAtomic.withNameInDataAndValue("indexType", "indexTypeText"));
+			extraData.addChild(new DataAtomicSpy("indexFieldName", "swedish"));
+			extraData.addChild(new DataAtomicSpy("indexType", "indexTypeText"));
 		}
 
 		return titleIndexTerm;

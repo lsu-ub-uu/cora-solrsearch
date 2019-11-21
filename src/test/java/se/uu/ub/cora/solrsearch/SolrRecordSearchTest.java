@@ -30,8 +30,11 @@ import org.apache.solr.client.solrj.SolrQuery;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
-import se.uu.ub.cora.data.DataAtomic;
 import se.uu.ub.cora.data.DataGroup;
+import se.uu.ub.cora.data.converter.JsonToDataConverterProvider;
+import se.uu.ub.cora.json.parser.JsonObject;
+import se.uu.ub.cora.json.parser.JsonParser;
+import se.uu.ub.cora.json.parser.org.OrgJsonParser;
 import se.uu.ub.cora.search.SearchResult;
 import se.uu.ub.cora.solrindex.SolrClientProviderSpy;
 import se.uu.ub.cora.solrindex.SolrClientSpy;
@@ -43,11 +46,15 @@ public class SolrRecordSearchTest {
 	private SolrClientSpy solrClientSpy;
 	private QueryResponseSpy queryResponse;
 	private List<String> emptyList = new ArrayList<>();
+	private JsonToDataConverterFactorySpy jsonToDataConverterFactory;
 
 	@BeforeMethod
 	public void beforeMethod() {
 		solrClientProvider = new SolrClientProviderSpy();
 		searchStorage = new SearchStorageSpy();
+		jsonToDataConverterFactory = new JsonToDataConverterFactorySpy();
+		JsonToDataConverterProvider.setJsonToDataConverterFactory(jsonToDataConverterFactory);
+
 		solrSearch = SolrRecordSearch.createSolrRecordSearchUsingSolrClientProviderAndSearchStorage(
 				solrClientProvider, searchStorage);
 		solrClientSpy = solrClientProvider.solrClientSpy;
@@ -76,8 +83,11 @@ public class SolrRecordSearchTest {
 		SearchResult searchResult = solrSearch
 				.searchUsingListOfRecordTypesToSearchInAndSearchData(emptyList, searchData);
 		assertNotNull(searchResult.listOfDataGroups);
-		DataGroup firstResult = searchResult.listOfDataGroups.get(0);
-		assertEquals(firstResult.getNameInData(), "book");
+		String resultFromSpyAsJsonFormattedString = getResultFromSpyAsJsonFormattedString();
+
+		JsonObject jsonObject = (JsonObject) jsonToDataConverterFactory.jsonValue;
+		jsonObject.toJsonFormattedString();
+		assertEquals(jsonObject.toJsonFormattedString(), resultFromSpyAsJsonFormattedString);
 
 		SolrQuery solrQueryCreated = (SolrQuery) solrClientSpy.params;
 		assertEquals(solrQueryCreated.getQuery(), "title_s:(A title)");
@@ -87,12 +97,22 @@ public class SolrRecordSearchTest {
 		assertEquals((int) solrQueryCreated.getRows(), 100);
 	}
 
+	private String getResultFromSpyAsJsonFormattedString() {
+		String resultFromSpy = (String) solrClientSpy.queryResponse.getResults().get(0)
+				.getFirstValue("recordAsJson");
+
+		JsonParser jsonParser = new OrgJsonParser();
+		JsonObject jsonValue = (JsonObject) jsonParser.parseString(resultFromSpy);
+		String resultFromSpyAsJsonFormattedString = jsonValue.toJsonFormattedString();
+		return resultFromSpyAsJsonFormattedString;
+	}
+
 	private DataGroup createSearchIncludeDataWithSearchTermIdAndValue(String searchTermId,
 			String value) {
 		DataGroup searchData = createSearchDataGroupWithMinimumNecessaryParts();
-		DataGroup includePart = searchData.getFirstGroupWithNameInData("include")
-				.getFirstGroupWithNameInData("includePart");
-		includePart.addChild(DataAtomic.withNameInDataAndValue(searchTermId, value));
+		DataGroup include = searchData.getFirstGroupWithNameInData("include");
+		DataGroup includePart = include.getFirstGroupWithNameInData("includePart");
+		includePart.addChild(new DataAtomicSpy(searchTermId, value));
 		return searchData;
 	}
 
@@ -102,10 +122,10 @@ public class SolrRecordSearchTest {
 	}
 
 	private DataGroup createMinimumSearchData() {
-		DataGroup searchData = DataGroup.withNameInData("bookSearch");
-		DataGroup include = DataGroup.withNameInData("include");
+		DataGroup searchData = new DataGroupSpy("bookSearch");
+		DataGroup include = new DataGroupSpy("include");
 		searchData.addChild(include);
-		DataGroup includePart = DataGroup.withNameInData("includePart");
+		DataGroup includePart = new DataGroupSpy("includePart");
 		include.addChild(includePart);
 		return searchData;
 	}
@@ -180,7 +200,7 @@ public class SolrRecordSearchTest {
 	public void testSearchWithLimitOnRows() {
 		int rows = 2;
 		DataGroup searchData = createMinimumSearchData();
-		searchData.addChild(DataAtomic.withNameInDataAndValue("rows", String.valueOf(rows)));
+		searchData.addChild(new DataAtomicSpy("rows", String.valueOf(rows)));
 
 		solrSearch.searchUsingListOfRecordTypesToSearchInAndSearchData(emptyList, searchData);
 
@@ -192,7 +212,7 @@ public class SolrRecordSearchTest {
 	public void testSearchWithOtherLimitOnRows() {
 		int rows = 5;
 		DataGroup searchData = createMinimumSearchData();
-		searchData.addChild(DataAtomic.withNameInDataAndValue("rows", String.valueOf(rows)));
+		searchData.addChild(new DataAtomicSpy("rows", String.valueOf(rows)));
 
 		solrSearch.searchUsingListOfRecordTypesToSearchInAndSearchData(emptyList, searchData);
 
@@ -203,7 +223,7 @@ public class SolrRecordSearchTest {
 	@Test
 	public void testSearchWhenRowsNotAnInt() {
 		DataGroup searchData = createMinimumSearchData();
-		searchData.addChild(DataAtomic.withNameInDataAndValue("rows", "notAnInt"));
+		searchData.addChild(new DataAtomicSpy("rows", "notAnInt"));
 
 		solrSearch.searchUsingListOfRecordTypesToSearchInAndSearchData(emptyList, searchData);
 
@@ -215,7 +235,7 @@ public class SolrRecordSearchTest {
 	public void testSearchFromStartPosition() {
 		int start = 2;
 		DataGroup searchData = createMinimumSearchData();
-		searchData.addChild(DataAtomic.withNameInDataAndValue("start", String.valueOf(start)));
+		searchData.addChild(new DataAtomicSpy("start", String.valueOf(start)));
 
 		solrSearch.searchUsingListOfRecordTypesToSearchInAndSearchData(emptyList, searchData);
 
@@ -228,7 +248,7 @@ public class SolrRecordSearchTest {
 	public void testSearchFromOtherStartPosition() {
 		int start = 7;
 		DataGroup searchData = createMinimumSearchData();
-		searchData.addChild(DataAtomic.withNameInDataAndValue("start", String.valueOf(start)));
+		searchData.addChild(new DataAtomicSpy("start", String.valueOf(start)));
 
 		solrSearch.searchUsingListOfRecordTypesToSearchInAndSearchData(emptyList, searchData);
 
@@ -239,7 +259,7 @@ public class SolrRecordSearchTest {
 	@Test
 	public void testSearchFromStartPositionStartNotAnInt() {
 		DataGroup searchData = createMinimumSearchData();
-		searchData.addChild(DataAtomic.withNameInDataAndValue("start", "notAnInt"));
+		searchData.addChild(new DataAtomicSpy("start", "notAnInt"));
 
 		solrSearch.searchUsingListOfRecordTypesToSearchInAndSearchData(emptyList, searchData);
 
@@ -253,8 +273,8 @@ public class SolrRecordSearchTest {
 		int start = 42;
 		int rows = 23;
 		DataGroup searchData = createMinimumSearchData();
-		searchData.addChild(DataAtomic.withNameInDataAndValue("start", String.valueOf(start)));
-		searchData.addChild(DataAtomic.withNameInDataAndValue("rows", String.valueOf(rows)));
+		searchData.addChild(new DataAtomicSpy("start", String.valueOf(start)));
+		searchData.addChild(new DataAtomicSpy("rows", String.valueOf(rows)));
 
 		solrSearch.searchUsingListOfRecordTypesToSearchInAndSearchData(emptyList, searchData);
 
@@ -271,8 +291,8 @@ public class SolrRecordSearchTest {
 		queryResponse.noOfDocumentsToReturn = rows;
 
 		DataGroup searchData = createMinimumSearchData();
-		searchData.addChild(DataAtomic.withNameInDataAndValue("start", String.valueOf(start)));
-		searchData.addChild(DataAtomic.withNameInDataAndValue("rows", String.valueOf(rows)));
+		searchData.addChild(new DataAtomicSpy("start", String.valueOf(start)));
+		searchData.addChild(new DataAtomicSpy("rows", String.valueOf(rows)));
 
 		SearchResult result = solrSearch
 				.searchUsingListOfRecordTypesToSearchInAndSearchData(emptyList, searchData);

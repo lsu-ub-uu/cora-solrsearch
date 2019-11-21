@@ -35,8 +35,7 @@ import se.uu.ub.cora.data.DataElement;
 import se.uu.ub.cora.data.DataGroup;
 import se.uu.ub.cora.data.DataPart;
 import se.uu.ub.cora.data.converter.JsonToDataConverter;
-import se.uu.ub.cora.data.converter.JsonToDataConverterFactory;
-import se.uu.ub.cora.data.converter.JsonToDataConverterFactoryImp;
+import se.uu.ub.cora.data.converter.JsonToDataConverterProvider;
 import se.uu.ub.cora.json.parser.JsonParser;
 import se.uu.ub.cora.json.parser.JsonValue;
 import se.uu.ub.cora.json.parser.org.OrgJsonParser;
@@ -286,9 +285,8 @@ public final class SolrRecordSearch implements RecordSearch {
 	private DataGroup convertJsonStringToDataGroup(String jsonRecord) {
 		JsonParser jsonParser = new OrgJsonParser();
 		JsonValue jsonValue = jsonParser.parseString(jsonRecord);
-		JsonToDataConverterFactory jsonToDataConverterFactory = new JsonToDataConverterFactoryImp();
-		JsonToDataConverter jsonToDataConverter = jsonToDataConverterFactory
-				.createForJsonObject(jsonValue);
+		JsonToDataConverter jsonToDataConverter = JsonToDataConverterProvider
+				.getConverterUsingJsonObject(jsonValue);
 		DataPart dataPart = jsonToDataConverter.toInstance();
 		return (DataGroup) dataPart;
 	}

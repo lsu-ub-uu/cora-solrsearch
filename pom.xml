@@ -26,8 +26,8 @@
  
 	<properties>
 		<logger.version>2.0.0</logger.version>
-		<search.version>2.0.0</search.version>
-		<searchstorage.version>2.0.0</searchstorage.version>
+		<search.version>3.0.0</search.version>
+		<searchstorage.version>3.0.0</searchstorage.version>
 		<solrj.version>8.2.0</solrj.version>
 	</properties>
 
