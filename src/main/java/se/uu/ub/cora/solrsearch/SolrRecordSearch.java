@@ -148,10 +148,10 @@ public final class SolrRecordSearch implements RecordSearch {
 		List<DataElement> childElementsFromSearchData = getChildElementsFromIncludePartOfSearch(
 				searchData);
 
-		List<String> queryParts = new ArrayList<>();
+		List<String> queryParts = new ArrayList<>(childElementsFromSearchData.size());
 
 		for (DataElement childElementFromSearch : childElementsFromSearchData) {
-			queryParts.add(addSearchDataToQuery(solrQuery, (DataAtomic) childElementFromSearch));
+			queryParts.add(addSearchDataToQuery((DataAtomic) childElementFromSearch));
 		}
 		setSolrQuery(queryParts);
 	}
@@ -161,23 +161,21 @@ public final class SolrRecordSearch implements RecordSearch {
 		solrQuery.set("q", query);
 	}
 
-	private String addSearchDataToQuery(SolrQuery solrQuery, DataAtomic childElementFromSearch) {
+	private String addSearchDataToQuery(DataAtomic childElementFromSearch) {
 		DataGroup searchTerm = searchStorage.getSearchTerm(childElementFromSearch.getNameInData());
 		String indexFieldName = extractIndexFieldName(searchTerm);
 		String query = null;
 
 		if (searchTypeIsLinkedData(searchTerm)) {
-			query = createQueryForLinkedData(solrQuery, childElementFromSearch, searchTerm,
-					indexFieldName);
+			query = createQueryForLinkedData(childElementFromSearch, searchTerm, indexFieldName);
 		} else {
-			query = createQueryForFinal(solrQuery, childElementFromSearch, indexFieldName);
+			query = createQueryForFinal(childElementFromSearch, indexFieldName);
 		}
 		return query;
 	}
 
-	private String createQueryForLinkedData(SolrQuery solrQuery,
-			DataAtomic childElementFromSearchAsAtomic, DataGroup searchTerm,
-			String indexFieldName) {
+	private String createQueryForLinkedData(DataAtomic childElementFromSearchAsAtomic,
+			DataGroup searchTerm, String indexFieldName) {
 		String linkedOnIndexFieldName = getLinkedOnIndexFieldNameFromStorageUsingSearchTerm(
 				searchTerm);
 		String query = "{!join from=ids to=" + linkedOnIndexFieldName + "}" + indexFieldName + ":"
@@ -187,8 +185,8 @@ public final class SolrRecordSearch implements RecordSearch {
 		return query;
 	}
 
-	private String createQueryForFinal(SolrQuery solrQuery,
-			DataAtomic childElementFromSearchAsAtomic, String indexFieldName) {
+	private String createQueryForFinal(DataAtomic childElementFromSearchAsAtomic,
+			String indexFieldName) {
 		String searchStringWithParenthesis = getEscapedSearchStringFromChildSurroundedWithParenthesis(
 				childElementFromSearchAsAtomic);
 		return indexFieldName + ":" + searchStringWithParenthesis;
