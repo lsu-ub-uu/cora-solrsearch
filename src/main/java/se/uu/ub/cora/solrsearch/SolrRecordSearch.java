@@ -147,23 +147,35 @@ public final class SolrRecordSearch implements RecordSearch {
 	private void addSearchTermsToQuery(DataGroup searchData) {
 		List<DataElement> childElementsFromSearchData = getChildElementsFromIncludePartOfSearch(
 				searchData);
+
+		List<String> queryParts = new ArrayList<>();
+
 		for (DataElement childElementFromSearch : childElementsFromSearchData) {
-			addSearchDataToQuery(solrQuery, (DataAtomic) childElementFromSearch);
+			queryParts.add(addSearchDataToQuery(solrQuery, (DataAtomic) childElementFromSearch));
 		}
+		setSolrQuery(queryParts);
 	}
 
-	private void addSearchDataToQuery(SolrQuery solrQuery, DataAtomic childElementFromSearch) {
+	private void setSolrQuery(List<String> queryParts) {
+		String query = String.join(" AND ", queryParts);
+		solrQuery.set("q", query);
+	}
+
+	private String addSearchDataToQuery(SolrQuery solrQuery, DataAtomic childElementFromSearch) {
 		DataGroup searchTerm = searchStorage.getSearchTerm(childElementFromSearch.getNameInData());
 		String indexFieldName = extractIndexFieldName(searchTerm);
+		String query = null;
 
 		if (searchTypeIsLinkedData(searchTerm)) {
-			createQueryForLinkedData(solrQuery, childElementFromSearch, searchTerm, indexFieldName);
+			query = createQueryForLinkedData(solrQuery, childElementFromSearch, searchTerm,
+					indexFieldName);
 		} else {
-			createQueryForFinal(solrQuery, childElementFromSearch, indexFieldName);
+			query = createQueryForFinal(solrQuery, childElementFromSearch, indexFieldName);
 		}
+		return query;
 	}
 
-	private void createQueryForLinkedData(SolrQuery solrQuery,
+	private String createQueryForLinkedData(SolrQuery solrQuery,
 			DataAtomic childElementFromSearchAsAtomic, DataGroup searchTerm,
 			String indexFieldName) {
 		String linkedOnIndexFieldName = getLinkedOnIndexFieldNameFromStorageUsingSearchTerm(
@@ -172,15 +184,14 @@ public final class SolrRecordSearch implements RecordSearch {
 				+ childElementFromSearchAsAtomic.getValue();
 		query += " AND type:" + searchTerm.getFirstGroupWithNameInData("searchInRecordType")
 				.getFirstAtomicValueWithNameInData(LINKED_RECORD_ID);
-		solrQuery.set("q", query);
+		return query;
 	}
 
-	private void createQueryForFinal(SolrQuery solrQuery, DataAtomic childElementFromSearchAsAtomic,
-			String indexFieldName) {
+	private String createQueryForFinal(SolrQuery solrQuery,
+			DataAtomic childElementFromSearchAsAtomic, String indexFieldName) {
 		String searchStringWithParenthesis = getEscapedSearchStringFromChildSurroundedWithParenthesis(
 				childElementFromSearchAsAtomic);
-		String queryString = indexFieldName + ":" + searchStringWithParenthesis;
-		solrQuery.set("q", queryString);
+		return indexFieldName + ":" + searchStringWithParenthesis;
 	}
 
 	private String getEscapedSearchStringFromChildSurroundedWithParenthesis(

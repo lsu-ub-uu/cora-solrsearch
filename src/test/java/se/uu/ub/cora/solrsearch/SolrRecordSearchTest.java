@@ -24,7 +24,9 @@ import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertNull;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.solr.client.solrj.SolrQuery;
 import org.testng.annotations.BeforeMethod;
@@ -77,9 +79,8 @@ public class SolrRecordSearchTest {
 
 	@Test
 	public void testSearchOneParameterNoRecordType() {
-		DataGroup searchData = createSearchIncludeDataWithSearchTermIdAndValue("titleSearchTerm",
-				"A title");
-
+		Map<String, String> searchTerms = createSearchTerms("titleSearchTerm", "A title");
+		DataGroup searchData = createSearchIncludeDataWithSearchTermIdAndValue(searchTerms);
 		SearchResult searchResult = solrSearch
 				.searchUsingListOfRecordTypesToSearchInAndSearchData(emptyList, searchData);
 		assertNotNull(searchResult.listOfDataGroups);
@@ -97,6 +98,12 @@ public class SolrRecordSearchTest {
 		assertEquals((int) solrQueryCreated.getRows(), 100);
 	}
 
+	private Map<String, String> createSearchTerms(String searchTermId, String searchTermValue) {
+		Map<String, String> searchTerms = new HashMap<>();
+		searchTerms.put(searchTermId, searchTermValue);
+		return searchTerms;
+	}
+
 	private String getResultFromSpyAsJsonFormattedString() {
 		String resultFromSpy = (String) solrClientSpy.queryResponse.getResults().get(0)
 				.getFirstValue("recordAsJson");
@@ -107,12 +114,14 @@ public class SolrRecordSearchTest {
 		return resultFromSpyAsJsonFormattedString;
 	}
 
-	private DataGroup createSearchIncludeDataWithSearchTermIdAndValue(String searchTermId,
-			String value) {
+	private DataGroup createSearchIncludeDataWithSearchTermIdAndValue(
+			Map<String, String> searchTerms) {
 		DataGroup searchData = createSearchDataGroupWithMinimumNecessaryParts();
 		DataGroup include = searchData.getFirstGroupWithNameInData("include");
 		DataGroup includePart = include.getFirstGroupWithNameInData("includePart");
-		includePart.addChild(new DataAtomicSpy(searchTermId, value));
+		for (String searchTerm : searchTerms.keySet()) {
+			includePart.addChild(new DataAtomicSpy(searchTerm, searchTerms.get(searchTerm)));
+		}
 		return searchData;
 	}
 
@@ -144,8 +153,8 @@ public class SolrRecordSearchTest {
 
 	private SolrQuery performIncludeSearchForIndexType(String indexType) {
 		searchStorage.indexTypeToReturn = indexType;
-		DataGroup searchData = createSearchIncludeDataWithSearchTermIdAndValue("titleSearchTerm",
-				"A title");
+		Map<String, String> searchTerms = createSearchTerms("titleSearchTerm", "A title");
+		DataGroup searchData = createSearchIncludeDataWithSearchTermIdAndValue(searchTerms);
 		solrSearch.searchUsingListOfRecordTypesToSearchInAndSearchData(emptyList, searchData);
 
 		return (SolrQuery) solrClientSpy.params;
@@ -317,8 +326,8 @@ public class SolrRecordSearchTest {
 		solrClientProvider.returnErrorThrowingClient = true;
 		solrClientProvider.errorMessage = "Error from server at http://localhost:8983/solr/coracore: undefined field testNewsTitleSearchTerm";
 
-		DataGroup searchData = createSearchIncludeDataWithSearchTermIdAndValue("anUnindexedTerm",
-				"A title");
+		Map<String, String> searchTerms = createSearchTerms("anUnindexedTerm", "A title");
+		DataGroup searchData = createSearchIncludeDataWithSearchTermIdAndValue(searchTerms);
 
 		SearchResult searchResult = solrSearch
 				.searchUsingListOfRecordTypesToSearchInAndSearchData(emptyList, searchData);
@@ -327,8 +336,8 @@ public class SolrRecordSearchTest {
 
 	@Test
 	public void testSearchOneParameterOneRecordType() {
-		DataGroup searchData = createSearchIncludeDataWithSearchTermIdAndValue("titleSearchTerm",
-				"A title");
+		Map<String, String> searchTerms = createSearchTerms("titleSearchTerm", "A title");
+		DataGroup searchData = createSearchIncludeDataWithSearchTermIdAndValue(searchTerms);
 
 		List<String> recordTypeList = new ArrayList<>();
 		recordTypeList.add("someRecordType");
@@ -341,8 +350,8 @@ public class SolrRecordSearchTest {
 
 	@Test
 	public void testSearchOneParameterTwoRecordType() {
-		DataGroup searchData = createSearchIncludeDataWithSearchTermIdAndValue("titleSearchTerm",
-				"A title");
+		Map<String, String> searchTerms = createSearchTerms("titleSearchTerm", "A title");
+		DataGroup searchData = createSearchIncludeDataWithSearchTermIdAndValue(searchTerms);
 
 		List<String> recordTypeList = new ArrayList<>();
 		recordTypeList.add("someRecordType");
@@ -357,8 +366,9 @@ public class SolrRecordSearchTest {
 
 	@Test
 	public void testSearchOneParameterWithColonCharacterOneRecordType() {
-		DataGroup searchData = createSearchIncludeDataWithSearchTermIdAndValue("titleSearchTerm",
+		Map<String, String> searchTerms = createSearchTerms("titleSearchTerm",
 				"A title: with a colon character");
+		DataGroup searchData = createSearchIncludeDataWithSearchTermIdAndValue(searchTerms);
 
 		List<String> recordTypeList = new ArrayList<>();
 		recordTypeList.add("someRecordType");
@@ -373,8 +383,9 @@ public class SolrRecordSearchTest {
 
 	@Test
 	public void testSearchLInkedDataOneParameterOneRecordType() {
-		DataGroup searchData = createSearchIncludeDataWithSearchTermIdAndValue(
-				"linkedTextSearchTerm", "textToSearchFor");
+		Map<String, String> searchTerms = createSearchTerms("linkedTextSearchTerm",
+				"textToSearchFor");
+		DataGroup searchData = createSearchIncludeDataWithSearchTermIdAndValue(searchTerms);
 
 		List<String> recordTypeList = new ArrayList<>();
 		recordTypeList.add("someRecordType");
@@ -387,4 +398,44 @@ public class SolrRecordSearchTest {
 				"{!join from=ids to=textId_s}swedish_t:textToSearchFor AND type:coraText");
 	}
 
+	@Test
+	public void testSearchTwoParameterNoRecordType() {
+		Map<String, String> searchTerms = createSearchTerms("titleSearchTerm", "Uppsala");
+		searchTerms.put("authorSearchTerm", "Eriksson");
+		DataGroup searchData = createSearchIncludeDataWithSearchTermIdAndValue(searchTerms);
+		SearchResult searchResult = solrSearch
+				.searchUsingListOfRecordTypesToSearchInAndSearchData(emptyList, searchData);
+		assertNotNull(searchResult.listOfDataGroups);
+		String resultFromSpyAsJsonFormattedString = getResultFromSpyAsJsonFormattedString();
+
+		JsonObject jsonObject = (JsonObject) jsonToDataConverterFactory.jsonValue;
+		jsonObject.toJsonFormattedString();
+		assertEquals(jsonObject.toJsonFormattedString(), resultFromSpyAsJsonFormattedString);
+
+		SolrQuery solrQueryCreated = (SolrQuery) solrClientSpy.params;
+		assertEquals(solrQueryCreated.getQuery(), "author_s:(Eriksson) AND title_s:(Uppsala)");
+
+		assertEquals(searchStorage.searchTermIds.get(0), "authorSearchTerm");
+		assertEquals(searchStorage.collectIndexTermIds.get(0), "authorIndexTerm");
+		assertEquals(searchStorage.searchTermIds.get(1), "titleSearchTerm");
+		assertEquals(searchStorage.collectIndexTermIds.get(1), "titleIndexTerm");
+		assertEquals((int) solrQueryCreated.getRows(), 100);
+	}
+
+	@Test
+	public void testSearchTwoParametersOneRecordType() {
+		Map<String, String> searchTerms = createSearchTerms("titleSearchTerm", "Uppsala");
+		searchTerms.put("authorSearchTerm", "Eriksson");
+		DataGroup searchData = createSearchIncludeDataWithSearchTermIdAndValue(searchTerms);
+
+		List<String> recordTypeList = new ArrayList<>();
+		recordTypeList.add("someRecordType");
+		solrSearch.searchUsingListOfRecordTypesToSearchInAndSearchData(recordTypeList, searchData);
+
+		SolrQuery solrQueryCreated = (SolrQuery) solrClientSpy.params;
+		assertEquals(solrQueryCreated.getQuery(), "author_s:(Eriksson) AND title_s:(Uppsala)");
+		String[] createdFilterQueries = solrQueryCreated.getFilterQueries();
+		assertEquals(createdFilterQueries[0], "type:someRecordType");
+
+	}
 }

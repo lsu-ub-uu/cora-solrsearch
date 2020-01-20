@@ -35,6 +35,10 @@ public class SearchStorageSpy implements SearchStorage {
 			searchTerm.addChild(createIndexTermWithIndexTermId("swedishIndexTerm"));
 
 		}
+		if ("authorSearchTerm".equals(searchTermId)) {
+			searchTerm.addChild(createIndexTermWithIndexTermId("authorIndexTerm"));
+			searchTerm.addChild(createSearchTermType("final"));
+		}
 		return searchTerm;
 	}
 
@@ -80,6 +84,10 @@ public class SearchStorageSpy implements SearchStorage {
 		titleIndexTerm.addChild(extraData);
 		if ("titleIndexTerm".equals(collectIndexTermId)) {
 			extraData.addChild(new DataAtomicSpy("indexFieldName", "title"));
+			extraData.addChild(new DataAtomicSpy("indexType", indexTypeToReturn));
+		}
+		if ("authorIndexTerm".equals(collectIndexTermId)) {
+			extraData.addChild(new DataAtomicSpy("indexFieldName", "author"));
 			extraData.addChild(new DataAtomicSpy("indexType", indexTypeToReturn));
 		}
 		if ("linkedTextIndexTerm".equals(collectIndexTermId)) {
