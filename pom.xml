@@ -14,7 +14,7 @@
 	<parent>
 		<groupId>se.uu.ub.cora</groupId>
 		<artifactId>cora-parent</artifactId>
-		<version>1.0.2</version>
+		<version>1.1.1</version>
 	</parent>
 
 	<artifactId>solrsearch</artifactId>
@@ -25,10 +25,10 @@
 	<name>solrsearch</name>
  
 	<properties>
-		<logger.version>2.0.0</logger.version>
-		<search.version>3.3.0</search.version>
-		<searchstorage.version>3.3.0</searchstorage.version>
-		<solrj.version>8.2.0</solrj.version>
+		<logger.version>2.1.0</logger.version>
+		<search.version>3.4.0</search.version>
+		<searchstorage.version>3.4.0</searchstorage.version>
+		<solrj.version>8.6.1</solrj.version>
 	</properties>
 
 	<scm>
