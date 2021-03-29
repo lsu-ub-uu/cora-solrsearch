@@ -181,7 +181,7 @@ public class SolrRecordIndexerTest {
 	}
 
 	@Test
-	public void testIndexDataCommittedToSolr() {
+	public void testIndexDataNotAutoCommittedToSolr() {
 		SolrClientProvider solrClientProvider = new SolrClientProviderSpy();
 		RecordIndexer recordIndexer = SolrRecordIndexer
 				.createSolrRecordIndexerUsingSolrClientProvider(solrClientProvider);
@@ -192,7 +192,7 @@ public class SolrRecordIndexerTest {
 		DataGroup collectedData = createCollectedDataWithOneCollectedIndexDataTerm();
 		recordIndexer.indexData(ids, collectedData, new DataGroupSpy("someDataGroup"));
 
-		assertEquals(solrClientSpy.committed, true);
+		assertEquals(solrClientSpy.committed, false);
 	}
 
 	@Test

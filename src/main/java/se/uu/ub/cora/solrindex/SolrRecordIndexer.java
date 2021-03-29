@@ -135,7 +135,6 @@ public final class SolrRecordIndexer implements RecordIndexer {
 		try {
 			SolrClient solrClient = solrClientProvider.getSolrClient();
 			solrClient.add(document);
-			solrClient.commit();
 		} catch (Exception e) {
 			throw SolrIndexException
 					.withMessageAndException("Error while indexing record with type: " + type
