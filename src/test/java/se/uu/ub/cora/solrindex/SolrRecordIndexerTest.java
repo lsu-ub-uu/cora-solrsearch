@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 Uppsala University Library
+ * Copyright 2017, 2021 Uppsala University Library
  *
  * This file is part of Cora.
  *
@@ -19,6 +19,7 @@
 package se.uu.ub.cora.solrindex;
 
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertNull;
 import static org.testng.Assert.assertTrue;
 
@@ -28,7 +29,7 @@ import java.util.Iterator;
 import java.util.List;
 
 import org.apache.solr.common.SolrInputDocument;
-import org.testng.annotations.BeforeTest;
+import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 import se.uu.ub.cora.data.DataGroup;
@@ -44,14 +45,26 @@ public class SolrRecordIndexerTest {
 	private SolrRecordIndexer recordIndexer;
 	private DataToJsonConverterFactorySpy dataToJsonConverterFactory;
 
-	@BeforeTest
+	@BeforeMethod
 	public void beforeTest() {
 		dataToJsonConverterFactory = new DataToJsonConverterFactorySpy();
 		DataToJsonConverterProvider.setDataToJsonConverterFactory(dataToJsonConverterFactory);
+		ids = new ArrayList<>();
 		ids.add("someType_someId");
 		solrClientProvider = new SolrClientProviderSpy();
 		recordIndexer = SolrRecordIndexer
 				.createSolrRecordIndexerUsingSolrClientProvider(solrClientProvider);
+	}
+
+	@Test
+	public void testInstantCommitInitalValue() {
+		assertFalse(recordIndexer.getInstantCommit());
+	}
+
+	@Test
+	public void testInstantCommitWhenValueSet() {
+		recordIndexer.setInstantCommit(true);
+		assertTrue(recordIndexer.getInstantCommit());
 	}
 
 	@Test
@@ -181,11 +194,7 @@ public class SolrRecordIndexerTest {
 	}
 
 	@Test
-	public void testIndexDataNotAutoCommittedToSolr() {
-		SolrClientProvider solrClientProvider = new SolrClientProviderSpy();
-		RecordIndexer recordIndexer = SolrRecordIndexer
-				.createSolrRecordIndexerUsingSolrClientProvider(solrClientProvider);
-
+	public void testIndexDataNoInstantCommittedToSolr() {
 		SolrClientSpy solrClientSpy = ((SolrClientProviderSpy) solrClientProvider).solrClientSpy;
 		assertEquals(solrClientSpy.committed, false);
 
@@ -193,6 +202,18 @@ public class SolrRecordIndexerTest {
 		recordIndexer.indexData(ids, collectedData, new DataGroupSpy("someDataGroup"));
 
 		assertEquals(solrClientSpy.committed, false);
+	}
+
+	@Test
+	public void testIndexDataInstantCommittedToSolrWhenSetToTrue() {
+		recordIndexer.setInstantCommit(true);
+		SolrClientSpy solrClientSpy = ((SolrClientProviderSpy) solrClientProvider).solrClientSpy;
+		assertEquals(solrClientSpy.committed, false);
+
+		DataGroup collectedData = createCollectedDataWithOneCollectedIndexDataTerm();
+		recordIndexer.indexData(ids, collectedData, new DataGroupSpy("someDataGroup"));
+
+		assertEquals(solrClientSpy.committed, true);
 	}
 
 	@Test
@@ -272,6 +293,19 @@ public class SolrRecordIndexerTest {
 	public void testDeleteFromIndex() {
 		SolrClientSpy solrClientSpy = ((SolrClientProviderSpy) solrClientProvider).solrClientSpy;
 
+		assertEquals(solrClientSpy.committed, false);
+		recordIndexer.deleteFromIndex("someType", "someId");
+		assertEquals(solrClientSpy.deletedId, "someType_someId");
+
+		assertEquals(solrClientSpy.committed, false);
+	}
+
+	@Test
+	public void testDeleteFromIndexWhenInstantCommit() {
+		recordIndexer.setInstantCommit(true);
+		SolrClientSpy solrClientSpy = ((SolrClientProviderSpy) solrClientProvider).solrClientSpy;
+
+		assertEquals(solrClientSpy.committed, false);
 		recordIndexer.deleteFromIndex("someType", "someId");
 		assertEquals(solrClientSpy.deletedId, "someType_someId");
 

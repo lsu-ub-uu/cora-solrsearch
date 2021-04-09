@@ -1,5 +1,5 @@
 /*
- * Copyright 2017, 2019 Uppsala University Library
+ * Copyright 2017, 2019, 2021 Uppsala University Library
  *
  * This file is part of Cora.
  *
@@ -38,9 +38,10 @@ public final class SolrRecordIndexer implements RecordIndexer {
 	private SolrClientProvider solrClientProvider;
 	private String id;
 	private String type;
-	private se.uu.ub.cora.data.DataGroup collectedData;
+	private DataGroup collectedData;
 	private SolrInputDocument document;
 	private List<String> ids;
+	private boolean instantCommit = false;
 
 	private SolrRecordIndexer(SolrClientProvider solrClientProvider) {
 		this.solrClientProvider = solrClientProvider;
@@ -135,10 +136,18 @@ public final class SolrRecordIndexer implements RecordIndexer {
 		try {
 			SolrClient solrClient = solrClientProvider.getSolrClient();
 			solrClient.add(document);
+			possiblyCommitInstantly(solrClient);
 		} catch (Exception e) {
 			throw SolrIndexException
 					.withMessageAndException("Error while indexing record with type: " + type
 							+ " and id: " + id + " " + e.getMessage(), e);
+		}
+	}
+
+	private void possiblyCommitInstantly(SolrClient solrClient)
+			throws SolrServerException, IOException {
+		if (instantCommit) {
+			solrClient.commit();
 		}
 	}
 
@@ -163,11 +172,20 @@ public final class SolrRecordIndexer implements RecordIndexer {
 			throws SolrServerException, IOException {
 		SolrClient solrClient = solrClientProvider.getSolrClient();
 		solrClient.deleteById(type + "_" + id);
-		solrClient.commit();
+		possiblyCommitInstantly(solrClient);
 	}
 
 	public SolrClientProvider getSolrClientProvider() {
 		// Needed for test
 		return solrClientProvider;
+	}
+
+	boolean getInstantCommit() {
+		// Needed for test
+		return instantCommit;
+	}
+
+	public void setInstantCommit(boolean instantCommit) {
+		this.instantCommit = instantCommit;
 	}
 }
