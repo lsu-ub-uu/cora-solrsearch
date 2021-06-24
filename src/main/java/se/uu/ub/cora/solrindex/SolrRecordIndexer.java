@@ -29,6 +29,7 @@ import org.apache.solr.common.SolrInputDocument;
 
 import se.uu.ub.cora.data.DataGroup;
 import se.uu.ub.cora.data.converter.DataToJsonConverter;
+import se.uu.ub.cora.data.converter.DataToJsonConverterFactory;
 import se.uu.ub.cora.data.converter.DataToJsonConverterProvider;
 import se.uu.ub.cora.search.RecordIndexer;
 import se.uu.ub.cora.solr.SolrClientProvider;
@@ -144,8 +145,11 @@ public final class SolrRecordIndexer implements RecordIndexer {
 	}
 
 	private String convertDataGroupToJsonString(DataGroup dataGroup) {
-		DataToJsonConverter dataToJsonConverter = DataToJsonConverterProvider
-				.getConverterUsingDataPart(dataGroup);
+
+		DataToJsonConverterFactory converterFactory = DataToJsonConverterProvider
+				.createImplementingFactory();
+		DataToJsonConverter dataToJsonConverter = converterFactory
+				.factorUsingConvertible(dataGroup);
 		return dataToJsonConverter.toJson();
 	}
 
