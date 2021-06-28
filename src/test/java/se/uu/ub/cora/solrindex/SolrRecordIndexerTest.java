@@ -42,12 +42,13 @@ public class SolrRecordIndexerTest {
 	private List<String> ids = new ArrayList<>();
 	private SolrClientProvider solrClientProvider;
 	private SolrRecordIndexer recordIndexer;
-	private DataToJsonConverterFactorySpy dataToJsonConverterFactory;
+	private DataToJsonConverterFactoryCreatorSpy dataToJsonConverterFactoryCreator;
 
 	@BeforeTest
 	public void beforeTest() {
-		dataToJsonConverterFactory = new DataToJsonConverterFactorySpy();
-		DataToJsonConverterProvider.setDataToJsonConverterFactory(dataToJsonConverterFactory);
+		dataToJsonConverterFactoryCreator = new DataToJsonConverterFactoryCreatorSpy();
+		DataToJsonConverterProvider
+				.setDataToJsonConverterFactoryCreator(dataToJsonConverterFactoryCreator);
 		ids.add("someType_someId");
 		solrClientProvider = new SolrClientProviderSpy();
 		recordIndexer = SolrRecordIndexer
@@ -109,7 +110,8 @@ public class SolrRecordIndexerTest {
 
 		SolrInputDocument created = solrClientSpy.document;
 
-		assertEquals(dataToJsonConverterFactory.dataPart, dataGroup);
+		assertEquals(dataToJsonConverterFactoryCreator.dataToJsonConverterFactory.dataGroup,
+				dataGroup);
 
 		assertEquals(created.getField("recordAsJson").getValue().toString(),
 				"Json from DataToJsonConverterSpy");
