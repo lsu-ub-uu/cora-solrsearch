@@ -26,7 +26,7 @@
  
 	<properties>
 		<logger.version>2.2.0</logger.version>
-		<coradata.version>4.1-SNAPSHOT</coradata.version>
+		<coradata.version>5.0-SNAPSHOT</coradata.version>
 		<json.version>2.2.0</json.version>
 		<search.version>3.7-SNAPSHOT</search.version>
 		<searchstorage.version>3.6.0</searchstorage.version>
