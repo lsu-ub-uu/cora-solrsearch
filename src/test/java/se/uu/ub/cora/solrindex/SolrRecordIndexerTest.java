@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 Uppsala University Library
+ * Copyright 2017, 2021 Uppsala University Library
  *
  * This file is part of Cora.
  *
@@ -28,7 +28,7 @@ import java.util.Iterator;
 import java.util.List;
 
 import org.apache.solr.common.SolrInputDocument;
-import org.testng.annotations.BeforeTest;
+import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 import se.uu.ub.cora.data.DataGroup;
@@ -44,11 +44,12 @@ public class SolrRecordIndexerTest {
 	private SolrRecordIndexer recordIndexer;
 	private DataToJsonConverterFactoryCreatorSpy dataToJsonConverterFactoryCreator;
 
-	@BeforeTest
+	@BeforeMethod
 	public void beforeTest() {
 		dataToJsonConverterFactoryCreator = new DataToJsonConverterFactoryCreatorSpy();
 		DataToJsonConverterProvider
 				.setDataToJsonConverterFactoryCreator(dataToJsonConverterFactoryCreator);
+		ids = new ArrayList<>();
 		ids.add("someType_someId");
 		solrClientProvider = new SolrClientProviderSpy();
 		recordIndexer = SolrRecordIndexer
@@ -62,9 +63,7 @@ public class SolrRecordIndexerTest {
 
 	@Test
 	public void testCollectNoIndexDataGroupNoCollectedDataTerm() {
-		DataGroup collectedData = new DataGroupSpy("collectedData");
-		collectedData.addChild(new DataAtomicSpy("type", "someType"));
-		collectedData.addChild(new DataAtomicSpy("id", "someId"));
+		DataGroup collectedData = createDefaultCollectedData();
 
 		recordIndexer.indexData(Collections.emptyList(), collectedData,
 				new DataGroupSpy("someDataGroup"));
@@ -77,14 +76,16 @@ public class SolrRecordIndexerTest {
 		assertEquals(solrClientSpy.committed, false);
 	}
 
-	@Test
-	public void testCollectIndexDataGroupNoCollectedDataTerm() {
+	private DataGroup createDefaultCollectedData() {
 		DataGroup collectedData = new DataGroupSpy("collectedData");
 		collectedData.addChild(new DataAtomicSpy("type", "someType"));
 		collectedData.addChild(new DataAtomicSpy("id", "someId"));
+		return collectedData;
+	}
 
-		DataGroup index = new DataGroupSpy("index");
-		collectedData.addChild(index);
+	@Test
+	public void testCollectIndexDataGroupNoCollectedDataTerm() {
+		DataGroup collectedData = createCollectedDataWithIndexChild();
 		recordIndexer.indexData(Collections.emptyList(), collectedData,
 				new DataGroupSpy("someDataGroup"));
 
@@ -94,43 +95,59 @@ public class SolrRecordIndexerTest {
 
 		assertNull(created);
 		assertEquals(solrClientSpy.committed, false);
+	}
+
+	private DataGroup createCollectedDataWithIndexChild() {
+		DataGroup collectedData = createDefaultCollectedData();
+
+		DataGroup index = new DataGroupSpy("index");
+		collectedData.addChild(index);
+		return collectedData;
 	}
 
 	@Test
 	public void testCollectOneSearchTerm() {
 		DataGroup recordIndexData = createCollectedDataWithOneCollectedIndexDataTerm();
+		DataGroup dataGroup = createDefaultDataGroup();
 
-		DataGroup dataGroup = new DataGroupSpy("someDataGroup");
-		DataGroup recordInfo = new DataGroupSpy("recordInfo");
-		dataGroup.addChild(recordInfo);
-		recordInfo.addChild(new DataAtomicSpy("id", "someId"));
 		recordIndexer.indexData(ids, recordIndexData, dataGroup);
-
-		SolrClientSpy solrClientSpy = ((SolrClientProviderSpy) solrClientProvider).solrClientSpy;
-
-		SolrInputDocument created = solrClientSpy.document;
 
 		assertEquals(dataToJsonConverterFactoryCreator.dataToJsonConverterFactory.dataGroup,
 				dataGroup);
 
+		assertCorrectDocumentWhenOneSearchTerm();
+	}
+
+	private void assertCorrectDocumentWhenOneSearchTerm() {
+		SolrInputDocument created = getCreatedDocument();
 		assertEquals(created.getField("recordAsJson").getValue().toString(),
 				"Json from DataToJsonConverterSpy");
 
 		assertEquals(created.getField("id").getValue().toString(), "someType_someId");
 		assertEquals(created.getField("ids").getValue().toString(), "someType_someId");
 		assertEquals(created.getField("type").getValue().toString(), "someType");
-
 		assertEquals(created.getField("title_s").getValue().toString(), "someEnteredValue");
+	}
+
+	private SolrInputDocument getCreatedDocument() {
+		SolrClientSpy solrClientSpy = ((SolrClientProviderSpy) solrClientProvider).solrClientSpy;
+		SolrInputDocument created = solrClientSpy.document;
+		return created;
+	}
+
+	private DataGroup createDefaultDataGroup() {
+		DataGroup dataGroup = new DataGroupSpy("someDataGroup");
+		DataGroup recordInfo = new DataGroupSpy("recordInfo");
+		dataGroup.addChild(recordInfo);
+		recordInfo.addChild(new DataAtomicSpy("id", "someId"));
+		return dataGroup;
 	}
 
 	@Test
 	public void testCollectOneSearchTermTwoIds() {
 		DataGroup recordIndexData = createCollectedDataWithOneCollectedIndexDataTerm();
 
-		DataGroup dataGroup = new DataGroupSpy("someDataGroup");
-		DataGroup recordInfo = new DataGroupSpy("recordInfo");
-		dataGroup.addChild(recordInfo);
-		recordInfo.addChild(new DataAtomicSpy("id", "someId"));
+		DataGroup dataGroup = createDefaultDataGroup();
 		List<String> ids2 = new ArrayList<>();
 		ids2.add("someType_someId");
 		ids2.add("someAbstractType_someId");
@@ -184,10 +201,6 @@ public class SolrRecordIndexerTest {
 
 	@Test
 	public void testIndexDataCommittedToSolr() {
-		SolrClientProvider solrClientProvider = new SolrClientProviderSpy();
-		RecordIndexer recordIndexer = SolrRecordIndexer
-				.createSolrRecordIndexerUsingSolrClientProvider(solrClientProvider);
-
 		SolrClientSpy solrClientSpy = ((SolrClientProviderSpy) solrClientProvider).solrClientSpy;
 		assertEquals(solrClientSpy.committed, false);
 
@@ -348,4 +361,59 @@ public class SolrRecordIndexerTest {
 		SolrInputDocument created = createTestDataForIndexType("indexTypeId");
 		assertEquals(created.getField("subTitle_s").getValue().toString(), "someOtherEnteredValue");
 	}
+
+	@Test
+	public void testCollectNoIndexDataGroupNoCollectedDataTermWhenNoExplicitCommit() {
+		DataGroup collectedData = createDefaultCollectedData();
+
+		recordIndexer.indexDataWithoutExplicitCommit(Collections.emptyList(), collectedData,
+				new DataGroupSpy("someDataGroup"));
+
+		SolrClientSpy solrClientSpy = ((SolrClientProviderSpy) solrClientProvider).solrClientSpy;
+
+		SolrInputDocument created = solrClientSpy.document;
+
+		assertNull(created);
+		assertEquals(solrClientSpy.committed, false);
+	}
+
+	@Test
+	public void testCollectIndexDataGroupNoCollectedDataTermWhenNoExplicitCommit() {
+		DataGroup collectedData = createCollectedDataWithIndexChild();
+
+		recordIndexer.indexDataWithoutExplicitCommit(Collections.emptyList(), collectedData,
+				new DataGroupSpy("someDataGroup"));
+
+		SolrClientSpy solrClientSpy = ((SolrClientProviderSpy) solrClientProvider).solrClientSpy;
+
+		SolrInputDocument created = solrClientSpy.document;
+
+		assertNull(created);
+		assertEquals(solrClientSpy.committed, false);
+	}
+
+	@Test
+	public void testCollectOneSearchTermWhenNoExplicitCommit() {
+		DataGroup recordIndexData = createCollectedDataWithOneCollectedIndexDataTerm();
+		DataGroup dataGroup = createDefaultDataGroup();
+
+		recordIndexer.indexDataWithoutExplicitCommit(ids, recordIndexData, dataGroup);
+
+		assertEquals(dataToJsonConverterFactoryCreator.dataToJsonConverterFactory.dataGroup,
+				dataGroup);
+		assertCorrectDocumentWhenOneSearchTerm();
+	}
+
+	@Test
+	public void testIndexDataNOTCommittedToSolrWhenNoExplicitCommit() {
+		SolrClientSpy solrClientSpy = ((SolrClientProviderSpy) solrClientProvider).solrClientSpy;
+		assertEquals(solrClientSpy.committed, false);
+
+		DataGroup collectedData = createCollectedDataWithOneCollectedIndexDataTerm();
+		recordIndexer.indexDataWithoutExplicitCommit(ids, collectedData,
+				new DataGroupSpy("someDataGroup"));
+
+		assertEquals(solrClientSpy.committed, false);
+	}
+
 }
