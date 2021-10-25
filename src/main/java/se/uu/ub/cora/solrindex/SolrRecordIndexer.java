@@ -1,5 +1,5 @@
 /*
- * Copyright 2017, 2019 Uppsala University Library
+ * Copyright 2017, 2019, 2021 Uppsala University Library
  *
  * This file is part of Cora.
  *
@@ -39,7 +39,7 @@ public final class SolrRecordIndexer implements RecordIndexer {
 	private SolrClientProvider solrClientProvider;
 	private String id;
 	private String type;
-	private se.uu.ub.cora.data.DataGroup collectedData;
+	private DataGroup collectedData;
 	private SolrInputDocument document;
 	private List<String> ids;
 
@@ -53,15 +53,26 @@ public final class SolrRecordIndexer implements RecordIndexer {
 	}
 
 	@Override
-	public void indexData(List<String> ids, DataGroup collectedData, DataGroup record) {
+	public void indexData(List<String> ids, DataGroup collectedData, DataGroup dataRecord) {
 		this.ids = new ArrayList<>(ids);
 		this.collectedData = collectedData;
+		possiblyIndexData(dataRecord, true);
+	}
+
+	private void possiblyIndexData(DataGroup dataRecord, boolean performExplicitCommit) {
 		if (dataGroupHasIndexTerms(collectedData)) {
-			indexDataKnownToContainDataToIndex(record);
+			indexDataKnownToContainDataToIndex(dataRecord, performExplicitCommit);
 		}
 	}
 
-	private void indexDataKnownToContainDataToIndex(DataGroup record) {
+	private boolean dataGroupHasIndexTerms(DataGroup collectedData) {
+		return collectedData.containsChildWithNameInData(INDEX)
+				&& collectedData.getFirstGroupWithNameInData(INDEX)
+						.containsChildWithNameInData("collectedDataTerm");
+	}
+
+	private void indexDataKnownToContainDataToIndex(DataGroup record,
+			boolean performExplicitCommit) {
 		document = new SolrInputDocument();
 		extractRecordIdentification();
 		addIdToDocument();
@@ -69,13 +80,7 @@ public final class SolrRecordIndexer implements RecordIndexer {
 		addIndexTerms();
 		String json = convertDataGroupToJsonString(record);
 		document.addField("recordAsJson", json);
-		sendDocumentToSolr();
-	}
-
-	private boolean dataGroupHasIndexTerms(DataGroup collectedData) {
-		return collectedData.containsChildWithNameInData(INDEX)
-				&& collectedData.getFirstGroupWithNameInData(INDEX)
-						.containsChildWithNameInData("collectedDataTerm");
+		sendDocumentToSolr(performExplicitCommit);
 	}
 
 	private void extractRecordIdentification() {
@@ -132,15 +137,22 @@ public final class SolrRecordIndexer implements RecordIndexer {
 		}
 	}
 
-	private void sendDocumentToSolr() {
+	private void sendDocumentToSolr(boolean performExplicitCommit) {
 		try {
 			SolrClient solrClient = solrClientProvider.getSolrClient();
 			solrClient.add(document);
-			solrClient.commit();
+			possiblyPerformExplicitCommit(solrClient, performExplicitCommit);
 		} catch (Exception e) {
 			throw SolrIndexException
 					.withMessageAndException("Error while indexing record with type: " + type
 							+ " and id: " + id + " " + e.getMessage(), e);
+		}
+	}
+
+	private void possiblyPerformExplicitCommit(SolrClient solrClient, boolean performExplicitCommit)
+			throws SolrServerException, IOException {
+		if (performExplicitCommit) {
+			solrClient.commit();
 		}
 	}
 
@@ -174,5 +186,14 @@ public final class SolrRecordIndexer implements RecordIndexer {
 	public SolrClientProvider getSolrClientProvider() {
 		// Needed for test
 		return solrClientProvider;
+	}
+
+	@Override
+	public void indexDataWithoutExplicitCommit(List<String> ids, DataGroup collectedData,
+			DataGroup dataRecord) {
+		this.ids = new ArrayList<>(ids);
+		this.collectedData = collectedData;
+		possiblyIndexData(dataRecord, false);
+
 	}
 }
