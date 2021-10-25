@@ -71,14 +71,14 @@ public final class SolrRecordIndexer implements RecordIndexer {
 						.containsChildWithNameInData("collectedDataTerm");
 	}
 
-	private void indexDataKnownToContainDataToIndex(DataGroup record,
+	private void indexDataKnownToContainDataToIndex(DataGroup dataRecord,
 			boolean performExplicitCommit) {
 		document = new SolrInputDocument();
 		extractRecordIdentification();
 		addIdToDocument();
 		addTypeToDocument();
 		addIndexTerms();
-		String json = convertDataGroupToJsonString(record);
+		String json = convertDataGroupToJsonString(dataRecord);
 		document.addField("recordAsJson", json);
 		sendDocumentToSolr(performExplicitCommit);
 	}
