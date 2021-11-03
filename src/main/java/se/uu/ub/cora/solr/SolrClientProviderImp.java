@@ -23,6 +23,7 @@ import org.apache.solr.client.solrj.impl.HttpSolrClient;
 
 public final class SolrClientProviderImp implements SolrClientProvider {
 	private String baseUrl;
+	private SolrClient solrClient;
 
 	private SolrClientProviderImp(String baseUrl) {
 		this.baseUrl = baseUrl;
@@ -34,7 +35,11 @@ public final class SolrClientProviderImp implements SolrClientProvider {
 
 	@Override
 	public SolrClient getSolrClient() {
-		return new HttpSolrClient.Builder(baseUrl).build();
+		if (solrClient == null) {
+			solrClient = new HttpSolrClient.Builder(baseUrl).build();
+
+		}
+		return solrClient;
 	}
 
 	public String getBaseURL() {
