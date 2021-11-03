@@ -1,5 +1,5 @@
 /*
- * Copyright 2017, 2019 Uppsala University Library
+ * Copyright 2017, 2019, 2021 Uppsala University Library
  *
  * This file is part of Cora.
  *
@@ -20,6 +20,7 @@ package se.uu.ub.cora.solr;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotNull;
+import static org.testng.Assert.assertSame;
 import static org.testng.Assert.assertTrue;
 
 import java.lang.reflect.Field;
@@ -52,6 +53,15 @@ public class SolrClientProviderTest {
 	public void testGetSolrClient() {
 		SolrClient solrClient = solrClientProvider.getSolrClient();
 		assertNotNull(solrClient);
+	}
+
+	@Test
+	public void testGetSolrClientReturnsSameInstance() {
+		SolrClient solrClient = solrClientProvider.getSolrClient();
+		assertNotNull(solrClient);
+		SolrClient solrClient2 = solrClientProvider.getSolrClient();
+
+		assertSame(solrClient, solrClient2);
 	}
 
 	@Test

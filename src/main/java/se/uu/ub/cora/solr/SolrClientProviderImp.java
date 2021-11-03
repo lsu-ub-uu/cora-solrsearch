@@ -1,5 +1,5 @@
 /*
- * Copyright 2017, 2019 Uppsala University Library
+ * Copyright 2017, 2019, 2021 Uppsala University Library
  *
  * This file is part of Cora.
  *
@@ -37,7 +37,6 @@ public final class SolrClientProviderImp implements SolrClientProvider {
 	public SolrClient getSolrClient() {
 		if (solrClient == null) {
 			solrClient = new HttpSolrClient.Builder(baseUrl).build();
-
 		}
 		return solrClient;
 	}
