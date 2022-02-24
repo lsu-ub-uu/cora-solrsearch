@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Uppsala University Library
+ * Copyright 2021, 2022 Uppsala University Library
  *
  * This file is part of Cora.
  *
@@ -18,16 +18,21 @@
  */
 package se.uu.ub.cora.solrindex;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import se.uu.ub.cora.search.RecordIndexer;
 import se.uu.ub.cora.search.RecordIndexerFactory;
 import se.uu.ub.cora.solr.SolrClientProviderImp;
 
 public class SolrRecordIndexerFactory implements RecordIndexerFactory {
 
+	private Map<String, SolrClientProviderImp> solrClientProviders = new HashMap<>();
+
 	@Override
 	public RecordIndexer factor(String solrUrl) {
-		SolrClientProviderImp solrClientProvider = SolrClientProviderImp.usingBaseUrl(solrUrl);
+		SolrClientProviderImp solrClientProvider = solrClientProviders.computeIfAbsent(solrUrl,
+				SolrClientProviderImp::usingBaseUrl);
 		return SolrRecordIndexer.createSolrRecordIndexerUsingSolrClientProvider(solrClientProvider);
 	}
-
 }

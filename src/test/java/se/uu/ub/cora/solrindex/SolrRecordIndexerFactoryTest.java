@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Uppsala University Library
+ * Copyright 2021, 2022 Uppsala University Library
  *
  * This file is part of Cora.
  *
@@ -19,24 +19,60 @@
 package se.uu.ub.cora.solrindex;
 
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertNotSame;
+import static org.testng.Assert.assertSame;
 
+import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 import se.uu.ub.cora.search.RecordIndexerFactory;
 import se.uu.ub.cora.solr.SolrClientProviderImp;
 
 public class SolrRecordIndexerFactoryTest {
+	private RecordIndexerFactory solrIndexerFactory;
+	private String defaultSolrUrl = "someSolrUrl";
+
+	@BeforeMethod
+	public void setup() {
+		solrIndexerFactory = new SolrRecordIndexerFactory();
+	}
 
 	@Test
 	public void testFactor() {
-		RecordIndexerFactory solrIndexerFactory = new SolrRecordIndexerFactory();
-		String solrUrl = "someSolrUrl";
-		SolrRecordIndexer recordIndexer = (SolrRecordIndexer) solrIndexerFactory.factor(solrUrl);
+		SolrRecordIndexer recordIndexer = (SolrRecordIndexer) solrIndexerFactory
+				.factor(defaultSolrUrl);
 		SolrClientProviderImp solrClientProvider = (SolrClientProviderImp) recordIndexer
 				.getSolrClientProvider();
 
-		assertEquals(solrClientProvider.getBaseURL(), solrUrl);
+		assertEquals(solrClientProvider.getBaseURL(), defaultSolrUrl);
+	}
 
+	@Test
+	public void testFactorSameUrlShouldUseSameInstanceOfSolrClientProvider() throws Exception {
+		SolrRecordIndexer recordIndexer = (SolrRecordIndexer) solrIndexerFactory
+				.factor(defaultSolrUrl);
+		SolrClientProviderImp solrClientProvider = (SolrClientProviderImp) recordIndexer
+				.getSolrClientProvider();
+		SolrRecordIndexer recordIndexer2 = (SolrRecordIndexer) solrIndexerFactory
+				.factor(defaultSolrUrl);
+		SolrClientProviderImp solrClientProvider2 = (SolrClientProviderImp) recordIndexer2
+				.getSolrClientProvider();
+
+		assertSame(solrClientProvider, solrClientProvider2);
+	}
+
+	@Test
+	public void testFactorDifferentUrlShouldUseSameInstanceOfSolrClientProvider() throws Exception {
+		SolrRecordIndexer recordIndexer = (SolrRecordIndexer) solrIndexerFactory
+				.factor(defaultSolrUrl);
+		SolrClientProviderImp solrClientProvider = (SolrClientProviderImp) recordIndexer
+				.getSolrClientProvider();
+		SolrRecordIndexer recordIndexer2 = (SolrRecordIndexer) solrIndexerFactory
+				.factor("someOtherSolrUrl");
+		SolrClientProviderImp solrClientProvider2 = (SolrClientProviderImp) recordIndexer2
+				.getSolrClientProvider();
+
+		assertNotSame(solrClientProvider, solrClientProvider2);
 	}
 
 }
