@@ -18,13 +18,13 @@
  */
 package se.uu.ub.cora.solrsearch;
 
-import se.uu.ub.cora.data.DataPart;
+import se.uu.ub.cora.data.Convertible;
 import se.uu.ub.cora.data.converter.JsonToDataConverter;
 
 public class JsonToDatConverterSpy implements JsonToDataConverter {
 
 	@Override
-	public DataPart toInstance() {
+	public Convertible toInstance() {
 		return new DataGroupSpy("someNameInData");
 	}
 
