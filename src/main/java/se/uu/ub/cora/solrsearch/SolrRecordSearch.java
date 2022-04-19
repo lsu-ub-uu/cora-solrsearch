@@ -295,8 +295,7 @@ public final class SolrRecordSearch implements RecordSearch {
 		JsonValue jsonValue = jsonParser.parseString(jsonRecord);
 		JsonToDataConverter jsonToDataConverter = JsonToDataConverterProvider
 				.getConverterUsingJsonObject(jsonValue);
-		DataGroup dataPart = (DataGroup) jsonToDataConverter.toInstance();
-		return dataPart;
+		return (DataGroup) jsonToDataConverter.toInstance();
 	}
 
 	private boolean isUndefinedFieldError(Exception e) {
