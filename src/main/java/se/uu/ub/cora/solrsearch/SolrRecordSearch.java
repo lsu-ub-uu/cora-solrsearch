@@ -31,9 +31,8 @@ import org.apache.solr.common.SolrDocument;
 import org.apache.solr.common.SolrDocumentList;
 
 import se.uu.ub.cora.data.DataAtomic;
-import se.uu.ub.cora.data.DataElement;
+import se.uu.ub.cora.data.DataChild;
 import se.uu.ub.cora.data.DataGroup;
-import se.uu.ub.cora.data.DataPart;
 import se.uu.ub.cora.data.converter.JsonToDataConverter;
 import se.uu.ub.cora.data.converter.JsonToDataConverterProvider;
 import se.uu.ub.cora.json.parser.JsonParser;
@@ -145,12 +144,12 @@ public final class SolrRecordSearch implements RecordSearch {
 	}
 
 	private void addSearchTermsToQuery(DataGroup searchData) {
-		List<DataElement> childElementsFromSearchData = getChildElementsFromIncludePartOfSearch(
+		List<DataChild> childElementsFromSearchData = getChildElementsFromIncludePartOfSearch(
 				searchData);
 
 		List<String> queryParts = new ArrayList<>(childElementsFromSearchData.size());
 
-		for (DataElement childElementFromSearch : childElementsFromSearchData) {
+		for (DataChild childElementFromSearch : childElementsFromSearchData) {
 			queryParts.add(addSearchDataToQuery((DataAtomic) childElementFromSearch));
 		}
 		setSolrQuery(queryParts);
@@ -242,7 +241,7 @@ public final class SolrRecordSearch implements RecordSearch {
 		}
 	}
 
-	private List<DataElement> getChildElementsFromIncludePartOfSearch(DataGroup searchData) {
+	private List<DataChild> getChildElementsFromIncludePartOfSearch(DataGroup searchData) {
 		DataGroup include = searchData.getFirstGroupWithNameInData("include");
 		DataGroup includePart = include.getFirstGroupWithNameInData("includePart");
 		return includePart.getChildren();
@@ -296,8 +295,7 @@ public final class SolrRecordSearch implements RecordSearch {
 		JsonValue jsonValue = jsonParser.parseString(jsonRecord);
 		JsonToDataConverter jsonToDataConverter = JsonToDataConverterProvider
 				.getConverterUsingJsonObject(jsonValue);
-		DataPart dataPart = jsonToDataConverter.toInstance();
-		return (DataGroup) dataPart;
+		return (DataGroup) jsonToDataConverter.toInstance();
 	}
 
 	private boolean isUndefinedFieldError(Exception e) {

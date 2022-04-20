@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import se.uu.ub.cora.data.DataAtomic;
-import se.uu.ub.cora.data.DataElement;
+import se.uu.ub.cora.data.DataChild;
 import se.uu.ub.cora.data.DataGroup;
 import se.uu.ub.cora.searchstorage.SearchStorage;
 
@@ -42,14 +42,14 @@ public class SearchStorageSpy implements SearchStorage {
 		return searchTerm;
 	}
 
-	private DataElement createLinkedOnWithIndexTermId(String indexTermId) {
+	private DataChild createLinkedOnWithIndexTermId(String indexTermId) {
 		DataGroup indexTerm = new DataGroupSpy("linkedOn");
 		indexTerm.addChild(new DataAtomicSpy("linkedRecordType", "collectIndexTerm"));
 		indexTerm.addChild(new DataAtomicSpy("linkedRecordId", indexTermId));
 		return indexTerm;
 	}
 
-	private DataElement createSearchInRecordTypeWithRecordTypeId(String recordTypeId) {
+	private DataChild createSearchInRecordTypeWithRecordTypeId(String recordTypeId) {
 		DataGroup searchInRecordType = new DataGroupSpy("searchInRecordType");
 		searchInRecordType.addChild(new DataAtomicSpy("linkedRecordType", "recordType"));
 		searchInRecordType.addChild(new DataAtomicSpy("linkedRecordId", recordTypeId));
