@@ -26,11 +26,11 @@
  
 	<properties>
 		<logger.version>2.5.0</logger.version>
-		<coradata.version>7.0.0</coradata.version>
+		<coradata.version>7.1.0</coradata.version>
 		<json.version>3.3.0</json.version>
-		<search.version>4.4.0</search.version>
-		<searchstorage.version>3.13.0</searchstorage.version>
-		<solrj.version>8.11.1</solrj.version>
+		<search.version>4.5.0</search.version>
+		<searchstorage.version>3.14.0</searchstorage.version>
+		<solrj.version>9.0.0</solrj.version>
 	</properties>
 
 	<scm>
