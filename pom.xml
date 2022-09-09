@@ -26,9 +26,9 @@
  
 	<properties>
 		<logger.version>2.5.0</logger.version>
-		<coradata.version>7.1.0</coradata.version>
+		<coradata.version>7.2-SNAPSHOT</coradata.version>
 		<json.version>3.3.0</json.version>
-		<search.version>4.5.0</search.version>
+		<search.version>5.0-SNAPSHOT</search.version>
 		<searchstorage.version>3.14.0</searchstorage.version>
 		<solrj.version>9.0.0</solrj.version>
 	</properties>

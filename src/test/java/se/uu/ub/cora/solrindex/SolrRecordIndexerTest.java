@@ -1,5 +1,5 @@
 /*
- * Copyright 2017, 2021 Uppsala University Library
+ * Copyright 2017, 2021, 2022 Uppsala University Library
  *
  * This file is part of Cora.
  *
@@ -32,6 +32,7 @@ import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 import se.uu.ub.cora.data.DataGroup;
+import se.uu.ub.cora.data.collectterms.IndexTerm;
 import se.uu.ub.cora.data.converter.DataToJsonConverterProvider;
 import se.uu.ub.cora.search.RecordIndexer;
 import se.uu.ub.cora.solr.SolrClientProvider;
@@ -63,9 +64,9 @@ public class SolrRecordIndexerTest {
 
 	@Test
 	public void testCollectNoIndexDataGroupNoCollectedDataTerm() {
-		DataGroup collectedData = createDefaultCollectedData();
+		List<IndexTerm> indexTerms = createEmptyIndexTermList();
 
-		recordIndexer.indexData(Collections.emptyList(), collectedData,
+		recordIndexer.indexData(Collections.emptyList(), indexTerms,
 				new DataGroupSpy("someDataGroup"));
 
 		SolrClientSpy solrClientSpy = ((SolrClientProviderSpy) solrClientProvider).solrClientSpy;
@@ -76,17 +77,14 @@ public class SolrRecordIndexerTest {
 		assertEquals(solrClientSpy.committed, false);
 	}
 
-	private DataGroup createDefaultCollectedData() {
-		DataGroup collectedData = new DataGroupSpy("collectedData");
-		collectedData.addChild(new DataAtomicSpy("type", "someType"));
-		collectedData.addChild(new DataAtomicSpy("id", "someId"));
-		return collectedData;
+	private List<IndexTerm> createEmptyIndexTermList() {
+		return Collections.emptyList();
 	}
 
 	@Test
 	public void testCollectIndexDataGroupNoCollectedDataTerm() {
-		DataGroup collectedData = createCollectedDataWithIndexChild();
-		recordIndexer.indexData(Collections.emptyList(), collectedData,
+		List<IndexTerm> indexTerms = createEmptyIndexTermList();
+		recordIndexer.indexData(Collections.emptyList(), indexTerms,
 				new DataGroupSpy("someDataGroup"));
 
 		SolrClientSpy solrClientSpy = ((SolrClientProviderSpy) solrClientProvider).solrClientSpy;
@@ -97,20 +95,12 @@ public class SolrRecordIndexerTest {
 		assertEquals(solrClientSpy.committed, false);
 	}
 
-	private DataGroup createCollectedDataWithIndexChild() {
-		DataGroup collectedData = createDefaultCollectedData();
-
-		DataGroup index = new DataGroupSpy("index");
-		collectedData.addChild(index);
-		return collectedData;
-	}
-
 	@Test
 	public void testCollectOneSearchTerm() {
-		DataGroup recordIndexData = createCollectedDataWithOneCollectedIndexDataTerm();
+		List<IndexTerm> indexTerms = createCollectedDataWithOneCollectedIndexDataTerm();
 		DataGroup dataGroup = createDefaultDataGroup();
 
-		recordIndexer.indexData(ids, recordIndexData, dataGroup);
+		recordIndexer.indexData(ids, indexTerms, dataGroup);
 
 		assertEquals(dataToJsonConverterFactoryCreator.dataToJsonConverterFactory.dataGroup,
 				dataGroup);
@@ -140,18 +130,19 @@ public class SolrRecordIndexerTest {
 		DataGroup recordInfo = new DataGroupSpy("recordInfo");
 		dataGroup.addChild(recordInfo);
 		recordInfo.addChild(new DataAtomicSpy("id", "someId"));
+		recordInfo.addChild(new DataAtomicSpy("type", "someType"));
 		return dataGroup;
 	}
 
 	@Test
 	public void testCollectOneSearchTermTwoIds() {
-		DataGroup recordIndexData = createCollectedDataWithOneCollectedIndexDataTerm();
+		List<IndexTerm> indexTerms = createCollectedDataWithOneCollectedIndexDataTerm();
 
 		DataGroup dataGroup = createDefaultDataGroup();
 		List<String> ids2 = new ArrayList<>();
 		ids2.add("someType_someId");
 		ids2.add("someAbstractType_someId");
-		recordIndexer.indexData(ids2, recordIndexData, dataGroup);
+		recordIndexer.indexData(ids2, indexTerms, dataGroup);
 
 		SolrClientSpy solrClientSpy = ((SolrClientProviderSpy) solrClientProvider).solrClientSpy;
 
@@ -165,38 +156,12 @@ public class SolrRecordIndexerTest {
 		assertEquals(created.getField("title_s").getValue().toString(), "someEnteredValue");
 	}
 
-	private DataGroup createCollectedDataWithOneCollectedIndexDataTerm() {
-		DataGroup collectedData = new DataGroupSpy("collectedData");
-		collectedData.addChild(new DataAtomicSpy("id", "someId"));
-		collectedData.addChild(new DataAtomicSpy("type", "someType"));
-
-		DataGroup indexData = new DataGroupSpy("index");
-		collectedData.addChild(indexData);
-
-		DataGroup indexTerm = createCollectedIndexDataTermUsingIdAndValueAndRepeatId(
-				"someIndexTerm", "someEnteredValue", "0");
-		indexData.addChild(indexTerm);
-		DataGroup extraData = createIndexExtraData("title", "indexTypeString");
-		indexTerm.addChild(extraData);
-
-		return collectedData;
-	}
-
-	private DataGroup createIndexExtraData(String indexFieldName, String indexType) {
-		DataGroup extraData = new DataGroupSpy("extraData");
-		extraData.addChild(new DataAtomicSpy("indexFieldName", indexFieldName));
-		extraData.addChild(new DataAtomicSpy("indexType", indexType));
-		return extraData;
-	}
-
-	private DataGroup createCollectedIndexDataTermUsingIdAndValueAndRepeatId(String id,
-			String value, String repeatId) {
-		DataGroup collectTerm = new DataGroupSpy("collectedDataTerm");
-		collectTerm.addChild(new DataAtomicSpy("collectTermId", id));
-		collectTerm.addChild(new DataAtomicSpy("collectTermValue", value));
-		collectTerm.setRepeatId(repeatId);
-
-		return collectTerm;
+	private List<IndexTerm> createCollectedDataWithOneCollectedIndexDataTerm() {
+		List<IndexTerm> indexTerms = new ArrayList<>();
+		IndexTerm indexTerm = new IndexTerm("someIndexTerm", "someEnteredValue", "title",
+				"indexTypeString");
+		indexTerms.add(indexTerm);
+		return indexTerms;
 	}
 
 	@Test
@@ -204,22 +169,20 @@ public class SolrRecordIndexerTest {
 		SolrClientSpy solrClientSpy = ((SolrClientProviderSpy) solrClientProvider).solrClientSpy;
 		assertEquals(solrClientSpy.committed, false);
 
-		DataGroup collectedData = createCollectedDataWithOneCollectedIndexDataTerm();
-		recordIndexer.indexData(ids, collectedData, new DataGroupSpy("someDataGroup"));
+		List<IndexTerm> indexTerms = createCollectedDataWithOneCollectedIndexDataTerm();
+		recordIndexer.indexData(ids, indexTerms, createDefaultDataGroup());
 
 		assertEquals(solrClientSpy.committed, true);
 	}
 
 	@Test
 	public void testTwoCollectedIndexDataTerms() {
-		DataGroup collectedData = createCollectedDataWithOneCollectedIndexDataTerm();
-		DataGroup collectedIndexDataTerm = createCollectedIndexDataTermUsingIdAndValueAndRepeatId(
-				"someOtherIndexTerm", "someOtherEnteredValue", "1");
-		collectedData.getFirstGroupWithNameInData("index").addChild(collectedIndexDataTerm);
-		DataGroup extraData = createIndexExtraData("subTitle", "indexTypeText");
-		collectedIndexDataTerm.addChild(extraData);
+		List<IndexTerm> indexTerms = createCollectedDataWithOneCollectedIndexDataTerm();
+		IndexTerm indexTerm = new IndexTerm("someOtherIndexTerm", "someOtherEnteredValue",
+				"subTitle", "indexTypeText");
+		indexTerms.add(indexTerm);
 
-		recordIndexer.indexData(ids, collectedData, new DataGroupSpy("someDataGroup"));
+		recordIndexer.indexData(ids, indexTerms, createDefaultDataGroup());
 
 		SolrClientSpy solrClientSpy = ((SolrClientProviderSpy) solrClientProvider).solrClientSpy;
 
@@ -234,14 +197,12 @@ public class SolrRecordIndexerTest {
 
 	@Test
 	public void testTwoCollectedDataTermsUsingSameCollectIndexTermWithDifferentValues() {
-		DataGroup collectedData = createCollectedDataWithOneCollectedIndexDataTerm();
-		DataGroup collectedIndexDataTerm = createCollectedIndexDataTermUsingIdAndValueAndRepeatId(
-				"someIndexTerm", "someOtherEnteredValue", "1");
-		collectedData.getFirstGroupWithNameInData("index").addChild(collectedIndexDataTerm);
-		DataGroup extraData = createIndexExtraData("title", "indexTypeString");
-		collectedIndexDataTerm.addChild(extraData);
+		List<IndexTerm> indexTerms = createCollectedDataWithOneCollectedIndexDataTerm();
+		IndexTerm indexTerm = new IndexTerm("someIndexTerm", "someOtherEnteredValue", "title",
+				"indexTypeString");
+		indexTerms.add(indexTerm);
 
-		recordIndexer.indexData(ids, collectedData, new DataGroupSpy("someDataGroup"));
+		recordIndexer.indexData(ids, indexTerms, createDefaultDataGroup());
 
 		SolrClientSpy solrClientSpy = ((SolrClientProviderSpy) solrClientProvider).solrClientSpy;
 
@@ -266,12 +227,9 @@ public class SolrRecordIndexerTest {
 		RecordIndexer recordIndexer = SolrRecordIndexer
 				.createSolrRecordIndexerUsingSolrClientProvider(solrClientProvider);
 
-		DataGroup collectedData = createCollectedDataWithOneCollectedIndexDataTerm();
-		DataGroup collectedIndexDataTerm = createCollectedIndexDataTermUsingIdAndValueAndRepeatId(
-				"someOtherIndexTerm", "someOtherEnteredValue", "1");
-		collectedData.addChild(collectedIndexDataTerm);
+		List<IndexTerm> indexTerms = createCollectedDataWithOneCollectedIndexDataTerm();
 
-		recordIndexer.indexData(ids, collectedData, new DataGroupSpy("someDataGroup"));
+		recordIndexer.indexData(ids, indexTerms, createDefaultDataGroup());
 	}
 
 	@Test
@@ -330,14 +288,12 @@ public class SolrRecordIndexerTest {
 		RecordIndexer recordIndexer = SolrRecordIndexer
 				.createSolrRecordIndexerUsingSolrClientProvider(solrClientProvider);
 
-		DataGroup collectedData = createCollectedDataWithOneCollectedIndexDataTerm();
-		DataGroup collectedIndexDataTerm = createCollectedIndexDataTermUsingIdAndValueAndRepeatId(
-				"someOtherIndexTerm", "someOtherEnteredValue", "1");
-		collectedData.getFirstGroupWithNameInData("index").addChild(collectedIndexDataTerm);
-		DataGroup extraData = createIndexExtraData("subTitle", indexType);
-		collectedIndexDataTerm.addChild(extraData);
+		List<IndexTerm> indexTerms = createCollectedDataWithOneCollectedIndexDataTerm();
+		IndexTerm indexTerm = new IndexTerm("someOtherIndexTerm", "someOtherEnteredValue",
+				"subTitle", indexType);
+		indexTerms.add(indexTerm);
 
-		recordIndexer.indexData(ids, collectedData, new DataGroupSpy("someDataGroup"));
+		recordIndexer.indexData(ids, indexTerms, createDefaultDataGroup());
 		SolrClientSpy solrClientSpy = ((SolrClientProviderSpy) solrClientProvider).solrClientSpy;
 		SolrInputDocument created = solrClientSpy.document;
 		return created;
@@ -364,9 +320,9 @@ public class SolrRecordIndexerTest {
 
 	@Test
 	public void testCollectNoIndexDataGroupNoCollectedDataTermWhenNoExplicitCommit() {
-		DataGroup collectedData = createDefaultCollectedData();
+		List<IndexTerm> indexTerms = createEmptyIndexTermList();
 
-		recordIndexer.indexDataWithoutExplicitCommit(Collections.emptyList(), collectedData,
+		recordIndexer.indexDataWithoutExplicitCommit(Collections.emptyList(), indexTerms,
 				new DataGroupSpy("someDataGroup"));
 
 		SolrClientSpy solrClientSpy = ((SolrClientProviderSpy) solrClientProvider).solrClientSpy;
@@ -379,9 +335,9 @@ public class SolrRecordIndexerTest {
 
 	@Test
 	public void testCollectIndexDataGroupNoCollectedDataTermWhenNoExplicitCommit() {
-		DataGroup collectedData = createCollectedDataWithIndexChild();
+		List<IndexTerm> indexTerms = createEmptyIndexTermList();
 
-		recordIndexer.indexDataWithoutExplicitCommit(Collections.emptyList(), collectedData,
+		recordIndexer.indexDataWithoutExplicitCommit(Collections.emptyList(), indexTerms,
 				new DataGroupSpy("someDataGroup"));
 
 		SolrClientSpy solrClientSpy = ((SolrClientProviderSpy) solrClientProvider).solrClientSpy;
@@ -394,10 +350,10 @@ public class SolrRecordIndexerTest {
 
 	@Test
 	public void testCollectOneSearchTermWhenNoExplicitCommit() {
-		DataGroup recordIndexData = createCollectedDataWithOneCollectedIndexDataTerm();
+		List<IndexTerm> indexTerms = createCollectedDataWithOneCollectedIndexDataTerm();
 		DataGroup dataGroup = createDefaultDataGroup();
 
-		recordIndexer.indexDataWithoutExplicitCommit(ids, recordIndexData, dataGroup);
+		recordIndexer.indexDataWithoutExplicitCommit(ids, indexTerms, dataGroup);
 
 		assertEquals(dataToJsonConverterFactoryCreator.dataToJsonConverterFactory.dataGroup,
 				dataGroup);
@@ -409,9 +365,8 @@ public class SolrRecordIndexerTest {
 		SolrClientSpy solrClientSpy = ((SolrClientProviderSpy) solrClientProvider).solrClientSpy;
 		assertEquals(solrClientSpy.committed, false);
 
-		DataGroup collectedData = createCollectedDataWithOneCollectedIndexDataTerm();
-		recordIndexer.indexDataWithoutExplicitCommit(ids, collectedData,
-				new DataGroupSpy("someDataGroup"));
+		List<IndexTerm> indexTerms = createCollectedDataWithOneCollectedIndexDataTerm();
+		recordIndexer.indexDataWithoutExplicitCommit(ids, indexTerms, createDefaultDataGroup());
 
 		assertEquals(solrClientSpy.committed, false);
 	}
