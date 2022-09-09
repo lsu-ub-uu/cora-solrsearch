@@ -28,6 +28,7 @@ import org.apache.solr.client.solrj.SolrServerException;
 import org.apache.solr.common.SolrInputDocument;
 
 import se.uu.ub.cora.data.DataGroup;
+import se.uu.ub.cora.data.DataRecordLink;
 import se.uu.ub.cora.data.collectterms.IndexTerm;
 import se.uu.ub.cora.data.converter.DataToJsonConverter;
 import se.uu.ub.cora.data.converter.DataToJsonConverterFactory;
@@ -80,7 +81,8 @@ public final class SolrRecordIndexer implements RecordIndexer {
 	private void extractRecordIdentification(DataGroup dataRecordGroup) {
 		DataGroup recordInfo = dataRecordGroup.getFirstGroupWithNameInData("recordInfo");
 		id = recordInfo.getFirstAtomicValueWithNameInData("id");
-		type = recordInfo.getFirstAtomicValueWithNameInData("type");
+		DataRecordLink typeLink = (DataRecordLink) recordInfo.getFirstChildWithNameInData("type");
+		type = typeLink.getLinkedRecordId();
 	}
 
 	private void addIdToDocument() {

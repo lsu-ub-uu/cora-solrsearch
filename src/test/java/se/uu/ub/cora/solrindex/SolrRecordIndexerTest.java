@@ -26,6 +26,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.function.Supplier;
 
 import org.apache.solr.common.SolrInputDocument;
 import org.testng.annotations.BeforeMethod;
@@ -38,6 +39,7 @@ import se.uu.ub.cora.search.RecordIndexer;
 import se.uu.ub.cora.solr.SolrClientProvider;
 import se.uu.ub.cora.solrsearch.DataAtomicSpy;
 import se.uu.ub.cora.solrsearch.DataGroupSpy;
+import se.uu.ub.cora.testspies.data.DataRecordLinkSpy;
 
 public class SolrRecordIndexerTest {
 	private List<String> ids = new ArrayList<>();
@@ -130,7 +132,14 @@ public class SolrRecordIndexerTest {
 		DataGroup recordInfo = new DataGroupSpy("recordInfo");
 		dataGroup.addChild(recordInfo);
 		recordInfo.addChild(new DataAtomicSpy("id", "someId"));
-		recordInfo.addChild(new DataAtomicSpy("type", "someType"));
+		DataRecordLinkSpy typeLink = new DataRecordLinkSpy();
+		recordInfo.addChild(typeLink);
+		typeLink.MRV.setDefaultReturnValuesSupplier("getNameInData",
+				(Supplier<String>) () -> "type");
+		typeLink.MRV.setDefaultReturnValuesSupplier("getLinkedRecordId",
+				(Supplier<String>) () -> "someType");
+
+		// recordInfo.addChild(new DataAtomicSpy("type", "someType"));
 		return dataGroup;
 	}
 
