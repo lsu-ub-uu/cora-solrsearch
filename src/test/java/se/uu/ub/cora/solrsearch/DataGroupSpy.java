@@ -105,6 +105,11 @@ public class DataGroupSpy implements DataGroup {
 	@Override
 	public DataChild getFirstChildWithNameInData(String nameInData) {
 		// TODO Auto-generated method stub
+		for (DataChild dataElement : children) {
+			if (nameInData.equals(dataElement.getNameInData())) {
+				return dataElement;
+			}
+		}
 		return null;
 	}
 

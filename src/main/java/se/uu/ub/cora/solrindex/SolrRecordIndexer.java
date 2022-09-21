@@ -1,5 +1,5 @@
 /*
- * Copyright 2017, 2019, 2021 Uppsala University Library
+ * Copyright 2017, 2019, 2021, 2022 Uppsala University Library
  *
  * This file is part of Cora.
  *
@@ -28,6 +28,8 @@ import org.apache.solr.client.solrj.SolrServerException;
 import org.apache.solr.common.SolrInputDocument;
 
 import se.uu.ub.cora.data.DataGroup;
+import se.uu.ub.cora.data.DataRecordLink;
+import se.uu.ub.cora.data.collected.IndexTerm;
 import se.uu.ub.cora.data.converter.DataToJsonConverter;
 import se.uu.ub.cora.data.converter.DataToJsonConverterFactory;
 import se.uu.ub.cora.data.converter.DataToJsonConverterProvider;
@@ -35,11 +37,10 @@ import se.uu.ub.cora.search.RecordIndexer;
 import se.uu.ub.cora.solr.SolrClientProvider;
 
 public final class SolrRecordIndexer implements RecordIndexer {
-	private static final String INDEX = "index";
 	private SolrClientProvider solrClientProvider;
 	private String id;
 	private String type;
-	private DataGroup collectedData;
+	private List<IndexTerm> indexTerms;
 	private SolrInputDocument document;
 	private List<String> ids;
 
@@ -53,39 +54,35 @@ public final class SolrRecordIndexer implements RecordIndexer {
 	}
 
 	@Override
-	public void indexData(List<String> ids, DataGroup collectedData, DataGroup dataRecord) {
+	public void indexData(List<String> ids, List<IndexTerm> indexTerms, DataGroup dataRecordGroup) {
 		this.ids = new ArrayList<>(ids);
-		this.collectedData = collectedData;
-		possiblyIndexData(dataRecord, true);
+		this.indexTerms = indexTerms;
+		possiblyIndexData(dataRecordGroup, true);
 	}
 
-	private void possiblyIndexData(DataGroup dataRecord, boolean performExplicitCommit) {
-		if (dataGroupHasIndexTerms(collectedData)) {
-			indexDataKnownToContainDataToIndex(dataRecord, performExplicitCommit);
+	private void possiblyIndexData(DataGroup dataRecordGroup, boolean performExplicitCommit) {
+		if (!indexTerms.isEmpty()) {
+			indexDataKnownToContainDataToIndex(dataRecordGroup, performExplicitCommit);
 		}
 	}
 
-	private boolean dataGroupHasIndexTerms(DataGroup collectedData) {
-		return collectedData.containsChildWithNameInData(INDEX)
-				&& collectedData.getFirstGroupWithNameInData(INDEX)
-						.containsChildWithNameInData("collectedDataTerm");
-	}
-
-	private void indexDataKnownToContainDataToIndex(DataGroup dataRecord,
+	private void indexDataKnownToContainDataToIndex(DataGroup dataRecordGroup,
 			boolean performExplicitCommit) {
 		document = new SolrInputDocument();
-		extractRecordIdentification();
+		extractRecordIdentification(dataRecordGroup);
 		addIdToDocument();
 		addTypeToDocument();
 		addIndexTerms();
-		String json = convertDataGroupToJsonString(dataRecord);
+		String json = convertDataGroupToJsonString(dataRecordGroup);
 		document.addField("recordAsJson", json);
 		sendDocumentToSolr(performExplicitCommit);
 	}
 
-	private void extractRecordIdentification() {
-		id = collectedData.getFirstAtomicValueWithNameInData("id");
-		type = collectedData.getFirstAtomicValueWithNameInData("type");
+	private void extractRecordIdentification(DataGroup dataRecordGroup) {
+		DataGroup recordInfo = dataRecordGroup.getFirstGroupWithNameInData("recordInfo");
+		id = recordInfo.getFirstAtomicValueWithNameInData("id");
+		DataRecordLink typeLink = (DataRecordLink) recordInfo.getFirstChildWithNameInData("type");
+		type = typeLink.getLinkedRecordId();
 	}
 
 	private void addIdToDocument() {
@@ -101,26 +98,18 @@ public final class SolrRecordIndexer implements RecordIndexer {
 	}
 
 	private void addIndexTerms() {
-		DataGroup collectedIndexData = collectedData.getFirstGroupWithNameInData(INDEX);
-		List<DataGroup> allIndexTermGroups = collectedIndexData
-				.getAllGroupsWithNameInData("collectedDataTerm");
-		for (DataGroup collectIndexTerm : allIndexTermGroups) {
+		for (IndexTerm collectIndexTerm : indexTerms) {
 			addFieldAndValueToSolrDocument(collectIndexTerm);
 		}
 	}
 
-	private void addFieldAndValueToSolrDocument(DataGroup collectIndexTerm) {
-		document.addField(extractFieldName(collectIndexTerm),
-				collectIndexTerm.getFirstAtomicValueWithNameInData("collectTermValue"));
+	private void addFieldAndValueToSolrDocument(IndexTerm indexTerm) {
+		document.addField(buildFieldNameUsingIndexTerm(indexTerm), indexTerm.value());
 	}
 
-	private String extractFieldName(DataGroup collectIndexTerm) {
-		DataGroup extraData = collectIndexTerm.getFirstGroupWithNameInData("extraData");
-		String indexType = extraData.getFirstAtomicValueWithNameInData("indexType");
-
-		String fieldName = extraData.getFirstAtomicValueWithNameInData("indexFieldName");
-		String suffix = chooseSuffixFromIndexType(indexType);
-		return fieldName + suffix;
+	private String buildFieldNameUsingIndexTerm(IndexTerm indexTerm) {
+		String suffix = chooseSuffixFromIndexType(indexTerm.indexType());
+		return indexTerm.indexFieldName() + suffix;
 	}
 
 	private String chooseSuffixFromIndexType(String indexType) {
@@ -189,10 +178,10 @@ public final class SolrRecordIndexer implements RecordIndexer {
 	}
 
 	@Override
-	public void indexDataWithoutExplicitCommit(List<String> ids, DataGroup collectedData,
+	public void indexDataWithoutExplicitCommit(List<String> ids, List<IndexTerm> indeTerm,
 			DataGroup dataRecord) {
 		this.ids = new ArrayList<>(ids);
-		this.collectedData = collectedData;
+		this.indexTerms = indeTerm;
 		possiblyIndexData(dataRecord, false);
 
 	}
