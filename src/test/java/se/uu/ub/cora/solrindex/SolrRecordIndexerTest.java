@@ -35,11 +35,11 @@ import org.testng.annotations.Test;
 import se.uu.ub.cora.data.DataGroup;
 import se.uu.ub.cora.data.collected.IndexTerm;
 import se.uu.ub.cora.data.converter.DataToJsonConverterProvider;
+import se.uu.ub.cora.data.spies.DataRecordLinkSpy;
 import se.uu.ub.cora.search.RecordIndexer;
 import se.uu.ub.cora.solr.SolrClientProvider;
 import se.uu.ub.cora.solrsearch.DataAtomicSpy;
 import se.uu.ub.cora.solrsearch.DataGroupSpy;
-import se.uu.ub.cora.testspies.data.DataRecordLinkSpy;
 
 public class SolrRecordIndexerTest {
 	private List<String> ids = new ArrayList<>();

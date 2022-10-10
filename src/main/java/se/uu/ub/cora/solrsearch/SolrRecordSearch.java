@@ -40,7 +40,7 @@ import se.uu.ub.cora.json.parser.JsonValue;
 import se.uu.ub.cora.json.parser.org.OrgJsonParser;
 import se.uu.ub.cora.search.RecordSearch;
 import se.uu.ub.cora.search.SearchResult;
-import se.uu.ub.cora.searchstorage.SearchStorage;
+import se.uu.ub.cora.searchstorage.SearchStorageView;
 import se.uu.ub.cora.solr.SolrClientProvider;
 
 public final class SolrRecordSearch implements RecordSearch {
@@ -50,18 +50,19 @@ public final class SolrRecordSearch implements RecordSearch {
 	private static final int DEFAULT_NUMBER_OF_ROWS_TO_RETURN = 100;
 	private static final String LINKED_RECORD_ID = "linkedRecordId";
 	private SolrClientProvider solrClientProvider;
-	private SearchStorage searchStorage;
+	private SearchStorageView searchStorageView;
 	private SolrQuery solrQuery;
 	private SolrClient solrClient;
 	private int start;
 
-	private SolrRecordSearch(SolrClientProvider solrClientProvider, SearchStorage searchStorage) {
+	private SolrRecordSearch(SolrClientProvider solrClientProvider,
+			SearchStorageView searchStorage) {
 		this.solrClientProvider = solrClientProvider;
-		this.searchStorage = searchStorage;
+		this.searchStorageView = searchStorage;
 	}
 
 	public static SolrRecordSearch createSolrRecordSearchUsingSolrClientProviderAndSearchStorage(
-			SolrClientProvider solrClientProvider, SearchStorage searchStorage) {
+			SolrClientProvider solrClientProvider, SearchStorageView searchStorage) {
 		return new SolrRecordSearch(solrClientProvider, searchStorage);
 	}
 
@@ -161,7 +162,8 @@ public final class SolrRecordSearch implements RecordSearch {
 	}
 
 	private String addSearchDataToQuery(DataAtomic childElementFromSearch) {
-		DataGroup searchTerm = searchStorage.getSearchTerm(childElementFromSearch.getNameInData());
+		DataGroup searchTerm = searchStorageView
+				.getSearchTerm(childElementFromSearch.getNameInData());
 		String indexFieldName = extractIndexFieldName(searchTerm);
 		String query = null;
 
@@ -204,7 +206,7 @@ public final class SolrRecordSearch implements RecordSearch {
 
 	private String getLinkedOnIndexFieldNameFromStorageUsingSearchTerm(DataGroup searchTerm) {
 		String linkedOn = getLinkedOnFromSearchTermDataGroup(searchTerm);
-		DataGroup collectIndexTerm = searchStorage.getCollectIndexTerm(linkedOn);
+		DataGroup collectIndexTerm = searchStorageView.getCollectIndexTerm(linkedOn);
 		return extractFieldName(collectIndexTerm);
 	}
 
@@ -214,7 +216,7 @@ public final class SolrRecordSearch implements RecordSearch {
 
 	private String extractIndexFieldName(DataGroup searchTerm) {
 		String id = getIndexTermIdFromSearchTermDataGroup(searchTerm);
-		DataGroup collectIndexTerm = searchStorage.getCollectIndexTerm(id);
+		DataGroup collectIndexTerm = searchStorageView.getCollectIndexTerm(id);
 		return extractFieldName(collectIndexTerm);
 	}
 
@@ -308,8 +310,8 @@ public final class SolrRecordSearch implements RecordSearch {
 		return searchResult;
 	}
 
-	public SearchStorage getSearchStorage() {
-		return searchStorage;
+	public SearchStorageView onlyForTestGetSearchStorageView() {
+		return searchStorageView;
 	}
 
 	public SolrClientProvider getSolrClientProvider() {

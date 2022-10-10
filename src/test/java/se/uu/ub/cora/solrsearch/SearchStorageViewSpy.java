@@ -6,9 +6,9 @@ import java.util.List;
 import se.uu.ub.cora.data.DataAtomic;
 import se.uu.ub.cora.data.DataChild;
 import se.uu.ub.cora.data.DataGroup;
-import se.uu.ub.cora.searchstorage.SearchStorage;
+import se.uu.ub.cora.searchstorage.SearchStorageView;
 
-public class SearchStorageSpy implements SearchStorage {
+public class SearchStorageViewSpy implements SearchStorageView {
 
 	public List<String> searchTermIds = new ArrayList<>();
 	public String indexTypeToReturn = "indexTypeString";

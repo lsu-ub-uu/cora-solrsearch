@@ -43,7 +43,7 @@ import se.uu.ub.cora.solrindex.SolrClientSpy;
 
 public class SolrRecordSearchTest {
 	private SolrClientProviderSpy solrClientProvider;
-	private SearchStorageSpy searchStorage;
+	private SearchStorageViewSpy searchStorage;
 	private SolrRecordSearch solrSearch;
 	private SolrClientSpy solrClientSpy;
 	private QueryResponseSpy queryResponse;
@@ -53,7 +53,7 @@ public class SolrRecordSearchTest {
 	@BeforeMethod
 	public void beforeMethod() {
 		solrClientProvider = new SolrClientProviderSpy();
-		searchStorage = new SearchStorageSpy();
+		searchStorage = new SearchStorageViewSpy();
 		jsonToDataConverterFactory = new JsonToDataConverterFactorySpy();
 		JsonToDataConverterProvider.setJsonToDataConverterFactory(jsonToDataConverterFactory);
 
@@ -69,7 +69,7 @@ public class SolrRecordSearchTest {
 		assertNotNull(solrSearch);
 		SolrQuery solrQueryCreated = (SolrQuery) solrClientSpy.params;
 		assertNull(solrQueryCreated);
-		assertEquals(solrSearch.getSearchStorage(), searchStorage);
+		assertEquals(solrSearch.onlyForTestGetSearchStorageView(), searchStorage);
 	}
 
 	@Test
