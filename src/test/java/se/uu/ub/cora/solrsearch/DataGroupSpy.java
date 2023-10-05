@@ -263,4 +263,10 @@ public class DataGroupSpy implements DataGroup {
 		return Optional.empty();
 	}
 
+	@Override
+	public boolean hasRepeatId() {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
 }
