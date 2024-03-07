@@ -4,6 +4,7 @@ import se.uu.ub.cora.data.Convertible;
 import se.uu.ub.cora.data.DataGroup;
 import se.uu.ub.cora.data.converter.DataToJsonConverter;
 import se.uu.ub.cora.data.converter.DataToJsonConverterFactory;
+import se.uu.ub.cora.data.converter.ExternalUrls;
 import se.uu.ub.cora.json.builder.JsonBuilderFactory;
 
 public class DataToJsonConverterFactorySpy implements DataToJsonConverterFactory {
@@ -19,15 +20,15 @@ public class DataToJsonConverterFactorySpy implements DataToJsonConverterFactory
 	}
 
 	@Override
-	public DataToJsonConverter factorUsingBaseUrlAndConvertible(String baseUrl,
-			Convertible convertible) {
+	public DataToJsonConverter factorUsingBaseUrlAndRecordUrlAndConvertible(String baseUrl,
+			String recordUrl, Convertible convertible) {
 		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
-	public DataToJsonConverter factorUsingBaseUrlAndRecordUrlAndConvertible(String baseUrl,
-			String recordUrl, Convertible convertible) {
+	public DataToJsonConverter factorUsingConvertibleAndExternalUrls(Convertible convertible,
+			ExternalUrls externalUrls) {
 		// TODO Auto-generated method stub
 		return null;
 	}
