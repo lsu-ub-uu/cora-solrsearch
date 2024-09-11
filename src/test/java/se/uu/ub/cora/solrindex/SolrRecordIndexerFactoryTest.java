@@ -42,7 +42,7 @@ public class SolrRecordIndexerFactoryTest {
 		SolrRecordIndexer recordIndexer = (SolrRecordIndexer) solrIndexerFactory
 				.factor(defaultSolrUrl);
 		SolrClientProviderImp solrClientProvider = (SolrClientProviderImp) recordIndexer
-				.getSolrClientProvider();
+				.onlyForTestGetSolrClientProvider();
 
 		assertEquals(solrClientProvider.getBaseURL(), defaultSolrUrl);
 	}
@@ -52,11 +52,11 @@ public class SolrRecordIndexerFactoryTest {
 		SolrRecordIndexer recordIndexer = (SolrRecordIndexer) solrIndexerFactory
 				.factor(defaultSolrUrl);
 		SolrClientProviderImp solrClientProvider = (SolrClientProviderImp) recordIndexer
-				.getSolrClientProvider();
+				.onlyForTestGetSolrClientProvider();
 		SolrRecordIndexer recordIndexer2 = (SolrRecordIndexer) solrIndexerFactory
 				.factor(defaultSolrUrl);
 		SolrClientProviderImp solrClientProvider2 = (SolrClientProviderImp) recordIndexer2
-				.getSolrClientProvider();
+				.onlyForTestGetSolrClientProvider();
 
 		assertSame(solrClientProvider, solrClientProvider2);
 	}
@@ -66,11 +66,11 @@ public class SolrRecordIndexerFactoryTest {
 		SolrRecordIndexer recordIndexer = (SolrRecordIndexer) solrIndexerFactory
 				.factor(defaultSolrUrl);
 		SolrClientProviderImp solrClientProvider = (SolrClientProviderImp) recordIndexer
-				.getSolrClientProvider();
+				.onlyForTestGetSolrClientProvider();
 		SolrRecordIndexer recordIndexer2 = (SolrRecordIndexer) solrIndexerFactory
 				.factor("someOtherSolrUrl");
 		SolrClientProviderImp solrClientProvider2 = (SolrClientProviderImp) recordIndexer2
-				.getSolrClientProvider();
+				.onlyForTestGetSolrClientProvider();
 
 		assertNotSame(solrClientProvider, solrClientProvider2);
 	}
