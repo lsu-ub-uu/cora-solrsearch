@@ -395,7 +395,7 @@ public class SolrRecordSearchTest {
 		String[] createdFilterQueries = solrQueryCreated.getFilterQueries();
 		assertEquals(createdFilterQueries[0], "type:someRecordType");
 		assertEquals(solrQueryCreated.getQuery(),
-				"{!join from=ids to=textId_s}swedish_t:textToSearchFor AND type:coraText");
+				"{!join from=id to=textId_s}swedish_t:textToSearchFor AND type:coraText");
 	}
 
 	@Test
