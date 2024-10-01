@@ -179,7 +179,7 @@ public final class SolrRecordSearch implements RecordSearch {
 			DataGroup searchTerm, String indexFieldName) {
 		String linkedOnIndexFieldName = getLinkedOnIndexFieldNameFromStorageUsingSearchTerm(
 				searchTerm);
-		String query = "{!join from=ids to=" + linkedOnIndexFieldName + "}" + indexFieldName + ":"
+		String query = "{!join from=id to=" + linkedOnIndexFieldName + "}" + indexFieldName + ":"
 				+ childElementFromSearchAsAtomic.getValue();
 		query += " AND type:" + searchTerm.getFirstGroupWithNameInData("searchInRecordType")
 				.getFirstAtomicValueWithNameInData(LINKED_RECORD_ID);

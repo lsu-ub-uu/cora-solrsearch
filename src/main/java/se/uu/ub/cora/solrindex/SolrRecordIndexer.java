@@ -1,5 +1,5 @@
 /*
- * Copyright 2017, 2019, 2021, 2022 Uppsala University Library
+ * Copyright 2017, 2019, 2021, 2022, 2024 Uppsala University Library
  *
  * This file is part of Cora.
  *
@@ -20,15 +20,13 @@
 package se.uu.ub.cora.solrindex;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.solr.client.solrj.SolrClient;
 import org.apache.solr.client.solrj.SolrServerException;
 import org.apache.solr.common.SolrInputDocument;
 
-import se.uu.ub.cora.data.DataGroup;
-import se.uu.ub.cora.data.DataRecordLink;
+import se.uu.ub.cora.data.DataRecordGroup;
 import se.uu.ub.cora.data.collected.IndexTerm;
 import se.uu.ub.cora.data.converter.DataToJsonConverter;
 import se.uu.ub.cora.data.converter.DataToJsonConverterFactory;
@@ -42,7 +40,6 @@ public final class SolrRecordIndexer implements RecordIndexer {
 	private String type;
 	private List<IndexTerm> indexTerms;
 	private SolrInputDocument document;
-	private List<String> ids;
 
 	private SolrRecordIndexer(SolrClientProvider solrClientProvider) {
 		this.solrClientProvider = solrClientProvider;
@@ -54,43 +51,33 @@ public final class SolrRecordIndexer implements RecordIndexer {
 	}
 
 	@Override
-	public void indexData(List<String> ids, List<IndexTerm> indexTerms, DataGroup dataRecordGroup) {
-		this.ids = new ArrayList<>(ids);
+	public void indexData(String recordType, String recordId, List<IndexTerm> indexTerms,
+			DataRecordGroup dataRecordGroup) {
+		type = recordType;
+		id = recordId;
 		this.indexTerms = indexTerms;
 		possiblyIndexData(dataRecordGroup, true);
 	}
 
-	private void possiblyIndexData(DataGroup dataRecordGroup, boolean performExplicitCommit) {
+	private void possiblyIndexData(DataRecordGroup dataRecordGroup, boolean performExplicitCommit) {
 		if (!indexTerms.isEmpty()) {
 			indexDataKnownToContainDataToIndex(dataRecordGroup, performExplicitCommit);
 		}
 	}
 
-	private void indexDataKnownToContainDataToIndex(DataGroup dataRecordGroup,
+	private void indexDataKnownToContainDataToIndex(DataRecordGroup dataRecordGroup,
 			boolean performExplicitCommit) {
 		document = new SolrInputDocument();
-		extractRecordIdentification(dataRecordGroup);
 		addIdToDocument();
 		addTypeToDocument();
 		addIndexTerms();
-		String json = convertDataGroupToJsonString(dataRecordGroup);
+		String json = convertDataRecordGroupToJsonString(dataRecordGroup);
 		document.addField("recordAsJson", json);
 		sendDocumentToSolr(performExplicitCommit);
 	}
 
-	private void extractRecordIdentification(DataGroup dataRecordGroup) {
-		DataGroup recordInfo = dataRecordGroup.getFirstGroupWithNameInData("recordInfo");
-		id = recordInfo.getFirstAtomicValueWithNameInData("id");
-		DataRecordLink typeLink = (DataRecordLink) recordInfo.getFirstChildWithNameInData("type");
-		type = typeLink.getLinkedRecordId();
-	}
-
 	private void addIdToDocument() {
 		document.addField("id", type + "_" + id);
-
-		for (String idInIds : ids) {
-			document.addField("ids", idInIds);
-		}
 	}
 
 	private void addTypeToDocument() {
@@ -145,12 +132,11 @@ public final class SolrRecordIndexer implements RecordIndexer {
 		}
 	}
 
-	private String convertDataGroupToJsonString(DataGroup dataGroup) {
-
+	private String convertDataRecordGroupToJsonString(DataRecordGroup dataRecordGroup) {
 		DataToJsonConverterFactory converterFactory = DataToJsonConverterProvider
 				.createImplementingFactory();
 		DataToJsonConverter dataToJsonConverter = converterFactory
-				.factorUsingConvertible(dataGroup);
+				.factorUsingConvertible(dataRecordGroup);
 		return dataToJsonConverter.toJson();
 	}
 
@@ -172,17 +158,17 @@ public final class SolrRecordIndexer implements RecordIndexer {
 		solrClient.commit();
 	}
 
-	public SolrClientProvider getSolrClientProvider() {
-		// Needed for test
-		return solrClientProvider;
+	@Override
+	public void indexDataWithoutExplicitCommit(String recordType, String recordId,
+			List<IndexTerm> indexTerms, DataRecordGroup dataRecordGroup) {
+		type = recordType;
+		id = recordId;
+		this.indexTerms = indexTerms;
+		possiblyIndexData(dataRecordGroup, false);
+
 	}
 
-	@Override
-	public void indexDataWithoutExplicitCommit(List<String> ids, List<IndexTerm> indeTerm,
-			DataGroup dataRecord) {
-		this.ids = new ArrayList<>(ids);
-		this.indexTerms = indeTerm;
-		possiblyIndexData(dataRecord, false);
-
+	public SolrClientProvider onlyForTestGetSolrClientProvider() {
+		return solrClientProvider;
 	}
 }
